@@ -8,14 +8,13 @@ var twitch = window.Twitch.ext;
 // create the request options for our Twitch API calls
 var requests = {
     set: createRequest('POST', 'cycle'),
-    get: createRequest('GET', 'query')
 };
 
 function createRequest(type, method) {
 
     return {
         type: type,
-        url: location.protocol + '//localhost:8081/color/' + method,
+        url: location.protocol + '//localhost:8081/hive/' + method,
         success: updateBlock,
         error: logError
     }
@@ -36,17 +35,13 @@ twitch.onAuthorized(function(auth) {
     // save our credentials
     token = auth.token;
     tuid = auth.userId;
-
-    // enable the button
-    $('#cycle').removeAttr('disabled');
-
+    twitch.rig.log("ON AUTHORIZED")
     setAuth(token);
     $.ajax(requests.get);
 });
 
-function updateBlock(hex) {
-    twitch.rig.log('Updating block color');
-    $('#color').css('background-color', hex);
+function updateBlock(res) {
+    twitch.rig.log("UPDATE BLOCK")
 }
 
 function logError(_, error, status) {
@@ -56,7 +51,7 @@ function logError(_, error, status) {
 function logSuccess(hex, status) {
   // we could also use the output to update the block synchronously here,
   // but we want all views to get the same broadcast response at the same time.
-  twitch.rig.log('EBS request returned '+hex+' ('+status+')');
+//   twitch.rig.log('EBS request returned '+hex+' ('+status+')');
 }
 
 $(function() {
@@ -70,7 +65,6 @@ $(function() {
 
     // listen for incoming broadcast message from our EBS
     twitch.listen('broadcast', function (target, contentType, color) {
-        twitch.rig.log('Received broadcast color');
-        updateBlock(color);
+        twitch.rig.log('Received broadcast twitch pubsub');
     });
 });
