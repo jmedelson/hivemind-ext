@@ -5,7 +5,44 @@
     <link rel="stylesheet" href=".\static\style.css">
 </head>
 <body style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
-    <div id="app" class="full-height"></div>
+    <div id="app" class="full-height">
+        <div id="content">
+            <div id="score-box">
+                <h1>0/0 Correct</h1>
+            </div>
+            <div id='wait-scene'>
+                <h1>HIVE MIND</h1>
+                <h2>Please wait for next round to begin</h2>
+            </div>
+            <div id="polling">
+                <div class="spacer"></div>
+                <h1 id="poll-question">
+                    Name something people are afraid of.
+                </h1>
+                <div class="spacer2"></div>
+                <input type="text" id="poll-input">
+                <button type="button" id='poll-submit'>Submit</button>
+            </div>
+            <div id="agree-scene">
+                <div class="spacer"></div>
+                <h1 id="agree-answer">
+                    xQc says: Potato
+                </h1>
+                <div class="spacer"></div>
+                <div id='button-row'>
+                    <button type="button" id='btn-agree' class="btn">Agree</button>
+                    <button type="button" id='btn-disagree' class="btn">Disagree</button>
+                </div>
+                <div id='agree-choice'>
+                    You Agreed
+                </div>
+                <div id='agree-result'>
+                    Potato was incorrect!
+                </div>
+            </div>
+
+        </div>
+    </div>
     <script src="https://extension-files.twitch.tv/helper/v1/twitch-ext.min.js"></script>
     <!-- If you use any external libraries, such as jQuery, you must include
       them as part of your extension.  Twitch does not allow extensions to link
