@@ -8,13 +8,14 @@ var twitch = window.Twitch.ext;
 // create the request options for our Twitch API calls
 var requests = {
     set: createRequest('POST', 'cycle'),
+    get: createRequest("GET", 'get')
 };
 
 function createRequest(type, method) {
 
     return {
         type: type,
-        url: location.protocol + '//localhost:8081/hive/' + method,
+        url:  'https://c6qsh7k1l1.execute-api.us-east-2.amazonaws.com/default/hiveMind',
         success: updateBlock,
         error: logError
     }
@@ -28,7 +29,7 @@ function setAuth(token) {
 }
 
 twitch.onContext(function(context) {
-    twitch.rig.log(context);
+    twitch.rig.log("CONTEXT",context);
 });
 
 twitch.onAuthorized(function(auth) {
@@ -41,7 +42,13 @@ twitch.onAuthorized(function(auth) {
 });
 
 function updateBlock(res) {
-    twitch.rig.log("UPDATE BLOCK")
+    twitch.rig.log("UPDATE BLOCK", res)
+    console.log("UPDATE BLOCK",res)
+    let data = JSON.parse(res)
+    console.log(data.id, data.message)
+    if(data.id == 'scene'){
+        sceneSelect(data.message)
+    }
 }
 
 function logError(_, error, status) {
@@ -54,6 +61,25 @@ function logSuccess(hex, status) {
 //   twitch.rig.log('EBS request returned '+hex+' ('+status+')');
 }
 
+function sceneSelect(scene){
+    if(scene == 'wait'){
+        $("#wait-scene").show()
+        $("#polling").hide()
+        $("#agree-scene").hide()
+    }
+    if(scene == 'poll'){
+        $("#polling").show()
+        $("#wait-scene").hide()
+        $("#agree-scene").hide()
+    }
+    if(scene == 'agree'){
+        $("#agree-scene").show()
+        $("#wait-scene").hide()
+        $("#polling").hide()
+    }
+    twitch.rig.log("Scene changed to: ", scene)
+}
+
 $(function() {
 
     // when we click the cycle button
@@ -64,7 +90,16 @@ $(function() {
     });
 
     // listen for incoming broadcast message from our EBS
-    twitch.listen('broadcast', function (target, contentType, color) {
+    twitch.listen('broadcast', function (target, contentType, data) {
         twitch.rig.log('Received broadcast twitch pubsub');
+        twitch.rig.log("target",target);
+        twitch.rig.log("contentType",contentType);
+        twitch.rig.log("data",data);
+        parsed = JSON.parse(data)
+        console.log(parsed['data'])
+        if(parsed['data']['identifier'] == 'scene'){
+            sceneSelect(parsed['data']['payload'])
+        }
     });
+
 });

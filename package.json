@@ -21,6 +21,6 @@
     "inert": "^5.1.0",
     "jsonwebtoken": "^8.2.0",
     "request": "^2.85.0",
-    "selfsigned": "^1.10.2"
+    "selfsigned": "^1.10.8"
   }
 }
