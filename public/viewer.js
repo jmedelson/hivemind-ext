@@ -45,9 +45,11 @@ function updateBlock(res) {
     twitch.rig.log("UPDATE BLOCK", res)
     console.log("UPDATE BLOCK",res)
     let data = JSON.parse(res)
-    console.log(data.id, data.message)
-    if(data.id == 'scene'){
-        sceneSelect(data.message)
+    console.log("MMM", data.message)
+    if(data.id == 'data'){
+        sceneSelect(data.message.scene)
+        updateQuestion(data.message.question)
+        updateAnswer(data.message.answer)
     }
 }
 
@@ -62,6 +64,7 @@ function logSuccess(hex, status) {
 }
 
 function sceneSelect(scene){
+    // console.log("changing scene to: ",scene)
     if(scene == 'wait'){
         $("#wait-scene").show()
         $("#polling").hide()
@@ -79,15 +82,15 @@ function sceneSelect(scene){
     }
     twitch.rig.log("Scene changed to: ", scene)
 }
+function updateQuestion(question){
+    // console.log("changing question to: ",question)
+    $("#poll-question").text(question)
+}
+function updateAnswer(answer){
+    $("#agree-answer").text(answer)
+}
 
 $(function() {
-
-    // when we click the cycle button
-    $('#cycle').click(function() {
-        if(!token) { return twitch.rig.log('Not authorized'); }
-        twitch.rig.log('Requesting a color cycle');
-        $.ajax(requests.set);
-    });
 
     // listen for incoming broadcast message from our EBS
     twitch.listen('broadcast', function (target, contentType, data) {
@@ -99,6 +102,10 @@ $(function() {
         console.log(parsed['data'])
         if(parsed['data']['identifier'] == 'scene'){
             sceneSelect(parsed['data']['payload'])
+        }else if(parsed['data']['identifier'] == 'question'){
+            updateQuestion(parsed['data']['payload'])
+        }else if(parsed['data']['identifier'] == 'answer'){
+            updateAnswer(parsed['data']['payload'])
         }
     });
 
