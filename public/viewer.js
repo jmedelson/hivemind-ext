@@ -1,6 +1,7 @@
 var token = "";
 var tuid = "";
 var ebs = "";
+var twitchscene = "";
 
 // because who wants to type this every time?
 var twitch = window.Twitch.ext;
@@ -8,7 +9,8 @@ var twitch = window.Twitch.ext;
 // create the request options for our Twitch API calls
 var requests = {
     set: createRequest('POST', 'cycle'),
-    get: createRequest("GET", 'get')
+    get: createRequest("GET", 'get'),
+    submit: createRequest("POST", 'submit'),
 };
 
 function createRequest(type, method) {
@@ -80,6 +82,7 @@ function sceneSelect(scene){
         $("#wait-scene").hide()
         $("#polling").hide()
     }
+    twitchscene = scene
     twitch.rig.log("Scene changed to: ", scene)
 }
 function updateQuestion(question){
@@ -89,9 +92,25 @@ function updateQuestion(question){
 function updateAnswer(answer){
     $("#agree-answer").text(answer)
 }
-
+function sendAnswer(){
+    let poll = $("#poll-input").val()
+    let message = {
+        "flag":"poll-ans",
+        "payload": poll
+      }
+      requests.submit['data'] = JSON.stringify(message)
+      $.ajax(requests.submit);
+}
 $(function() {
-
+    $("#poll-submit").click(function(){
+        sendAnswer()  
+    });
+    $("#poll-submit").keypress(function(event){
+        var keycode = (event.keyCode ? event.keyCode : event.which);
+        if(keycode == '13'){
+            sendAnswer()  
+        }
+    });
     // listen for incoming broadcast message from our EBS
     twitch.listen('broadcast', function (target, contentType, data) {
         twitch.rig.log('Received broadcast twitch pubsub');
