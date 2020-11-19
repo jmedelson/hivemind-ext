@@ -51,43 +51,142 @@ const sendBroadcast = async (channel, data) =>{
     }
     return await axios(request)
 }
-const updateScene = async (scene) =>{
-    console.log("Update scene to:", scene);
-    const params = {
-        TableName: 'hivemind',
+
+const updateDB = async (type,data) =>{
+        console.log("Update "+ type +" to:", data);
+        const params = {
+        TableName: 'hivemind-ext',
         Key:{
-            "catagory": "scene",
-            "sort": "placeholder"
+            data:"data"
         },
-        UpdateExpression: "SET scene =:a",
+        UpdateExpression: "SET #catagory =:a",
+        ExpressionAttributeNames:{
+            "#catagory": type
+        },
         ExpressionAttributeValues:{
-            ":a":scene,
+            ":a":data,
         },
         ReturnValues:"UPDATED_NEW"
     };
     return await documentClient.update(params).promise();
 }
 
+const updateDB2 = async (word) =>{
+    console.log("Updatedb2: "+ word);
+    const params = {
+        TableName: 'hivemind-data',
+        Key: {
+            "placeholder": "placeholder",
+            "word": word
+        },
+        UpdateExpression: 'ADD #a :y',
+        ExpressionAttributeNames: {'#a' : 'count'},
+        ExpressionAttributeValues: {
+            ':y' : 1
+        },
+        ReturnValues: "UPDATED_NEW"
+    };
+    return await documentClient.update(params).promise();
+}
+
+const queryDB = async () =>{
+    console.log("queryDB----");
+    const params = {
+        TableName: 'hivemind-data',
+        IndexName: "main-index",
+        KeyConditionExpression: 'placeholder = :placeholder',
+        ExpressionAttributeValues: {
+            ':placeholder': "placeholder"
+        },
+        ConsistentRead: false,
+        ScanIndexForward: false
+    }
+    return await documentClient.query(params).promise();
+}
+const scanDB = async () =>{
+    console.log("scanDB----");
+    const params = {
+        TableName: 'hivemind-response',
+        IndexName: "word-index",
+        ConsistentRead: false
+    }
+    return await documentClient.scan(params).promise();
+}
 
 const mainHandler = async(parsed, event) =>{
-    console.log("mainHandler started",parsed['flag'])
-    if(parsed['flag']=="scene"){
-        console.log("flag = scene")
-        let payload = parsed['payload'];
-        console.log("PAYLOAD:", payload);
-        var message = {
-            data:{
-              identifier:'scene',
-              payload:payload
+    if(parsed != null){
+        console.log("mainHandler started",parsed['flag'],parsed['flag']=="SET")
+        if(parsed['flag']=="SET"){
+            console.log("flag = SET")
+            let payload = parsed['payload'];
+            let catagory = parsed['catagory'];
+            let message = {
+                data:{
+                  identifier: catagory,
+                  payload:payload
+                }
             }
+            let [updated, broadcastResult] = await Promise.all([updateDB(catagory, payload),sendBroadcast('21314155', JSON.stringify(message))]);
+            let ret = {
+                id:catagory,
+                data: payload
+            }
+            return(ret)
+        }else if(parsed['flag']=="poll-ans"){
+            console.log("flag = poll-ans")
+            let payload = parsed['payload'];
+            let broadcastResult = await updateDB2(payload)
+            let ret = {
+                id: "poll-response",
+                data: payload
+            }
+            return(ret)
+        }else if(parsed['flag']=="getResponses"){
+            let results = await queryDB()
+            console.log("RESPONSE", results)
+            let ret = {
+                id:"POLL-results",
+                data: results
+            }
+            return(ret)
         }
-        let [scene, broadcastResult] = await Promise.all([updateScene(payload),sendBroadcast('21314155', JSON.stringify(message))]);
-        console.log("SCENE:",scene)
-        console.log("Broadcast complete")
-        return(payload)
-    }else if(parsed['flag']=="scene"){
-        console.log("hello world")
+    }else if(event['httpMethod']=="GET"){
+        console.log("GET received")
+        const params = {
+            TableName: 'hivemind-ext',
+            Key:{
+                data:"data"
+            },
+            AttributesToGet: [
+                'scene',
+                'answer',
+                'question'
+            ]
+        };
+        let ret = await documentClient.get(params).promise();
+        console.log(ret)
+        let message = {
+          id:"data",
+          data:{
+            scene : ret['Item']['scene'],
+            question : ret['Item']['question'],
+            answer : ret['Item']['answer']
+          }
+        }
+        console.log("M",message)
+        return(message)
+    }else{
+        let message = {
+          id:"unknown",
+          data: ""
+        }
+        return(message)
     }
+    let message = {
+        id:"unknown",
+        data: ""
+    }
+    return(message)
 }
 
 exports.handler = async (event) => {
@@ -101,19 +200,18 @@ exports.handler = async (event) => {
     // if(event['httpMethod'] == 'OPTIONS'){
     //     return { statusCode:200, body: "sucess", headers };
     // }
-    console.log("EVENT",event['body'])
+    console.log("EVENT",event)
     let parsed = JSON.parse(event['body'])
     let ret = await mainHandler(parsed, event)
     // console.log("EVENT: ", event['pathParameters'], "LENGTH:", event['pathParameters'].length>0)
     // TODO implement
     
     var x = {
-        data:{
-            id:"loaded from AWS",
-            message:"HELLO WORLD"
-        }
+        id:ret.id,
+        message:ret.data
     }
     var body= JSON.stringify(x)
+    console.log("b",body)
     var statusCode = 200
     return { statusCode, body: JSON.stringify(body, null, 2), headers };
 };
