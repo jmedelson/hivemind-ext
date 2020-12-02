@@ -1,4 +1,8 @@
 /* SCORE BOX */
+@font-face {
+    font-family: RoobertTW;
+    src: url("./fonts/RoobertTW-Regular.otf") format("opentype");
+}
 #score-box{
     position: absolute;
     margin: auto;
@@ -29,6 +33,78 @@
     font-size: 30px;
 }
 #polling{
+    position: absolute;
+    left: 30px;
+    bottom: 45px;
+    background: #9147ff;
+    height: 145px;
+    width: 770px;
+    border-radius: 14px;
+}
+#poll-input{
+    font-family: 'RoobertTW';
+    position: relative;
+    left: 5%;
+    border: none;
+    background-image: none;
+    background-color: transparent;
+    -webkit-box-shadow: none;
+    -moz-box-shadow: none;
+    box-shadow: none;
+    border-bottom: 3px solid white;
+    outline: none;
+    color: white;
+    font-size: 35px;
+    width: 70%;
+    
+}
+#poll-submit{
+    font-family: 'RoobertTW';
+    position: relative;
+    color:white;
+    left: 10%;
+    background: none;
+    padding: 4px 11px;
+    font-size: 16px;
+}
+#poll-submit:hover {
+    box-shadow: 0px 0px 5px #fff;
+    color: white;
+    background: #946ad2;
+}
+#poll-submit:active {
+    background: white;
+    /* border-color: darkorchid; */
+    color: #9147ff;
+}
+.link-button{
+    background-color: none;
+    color: white;
+    border: 2px solid white;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+}
+#nextQ{
+    font-family: 'RoobertTW';
+    position: relative;
+    color:white;
+    left: 5%;
+    font-size: 14px;
+    margin-top: 18px;
+    margin-bottom: 5px;
+}
+#poll-question{
+    font-family: 'RoobertTW';
+    position: relative;
+    color: white;
+    left: 5%;
+    margin-top: 0px;
+    margin-bottom: 2px;
+    font-size: 23px;
+}
+/* #polling{
     position: absolute;
     width: 100%;
     height: 100vh;
@@ -66,7 +142,7 @@
     width: 240px;
     height: 70px;
     font-size: 30px;
-}
+} */
 #agree-scene{
     position: absolute;
     width: 100%;

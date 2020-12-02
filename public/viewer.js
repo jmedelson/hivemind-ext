@@ -94,19 +94,27 @@ function updateAnswer(answer){
 }
 function sendAnswer(){
     let poll = $("#poll-input").val()
+    poll = poll.toLowerCase();
+    poll = poll.trim()
+    const punctuation = /[!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~]/g;
+    poll = poll.replace(punctuation,'')
+    if(poll.length<1){
+        return;
+    }
     let message = {
         "flag":"poll-ans",
         "payload": poll
-      }
-      requests.submit['data'] = JSON.stringify(message)
-      $.ajax(requests.submit);
+    }
+    requests.submit['data'] = JSON.stringify(message)
+    $.ajax(requests.submit);
 }
 $(function() {
     $("#poll-submit").click(function(){
         sendAnswer()  
     });
-    $("#poll-submit").keypress(function(event){
+    $("#poll-input").keypress(function(event){
         var keycode = (event.keyCode ? event.keyCode : event.which);
+        console.log("KEYCODE",keycode)
         if(keycode == '13'){
             sendAnswer()  
         }
