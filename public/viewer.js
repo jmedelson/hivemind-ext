@@ -117,6 +117,7 @@ function updateCorrect(correct){
     if(correct=="unset"){
         correctResponse = null
     }else{
+        sceneSelect("result")
         correctResponse = correct
         console.log("correctResponse = ", correct)
         console.log("Response = ", response)
