@@ -2,6 +2,12 @@ var token = "";
 var tuid = "";
 var ebs = "";
 var twitchscene = "";
+var globalQuestion = ""
+var globalAnswer = ""
+var response = null;
+var correctResponse = null;
+var questionsSeen = 0;
+var questionsCorrect = 0;
 
 // because who wants to type this every time?
 var twitch = window.Twitch.ext;
@@ -49,9 +55,10 @@ function updateBlock(res) {
     let data = JSON.parse(res)
     console.log("MMM", data.message)
     if(data.id == 'data'){
-        sceneSelect(data.message.scene)
         updateQuestion(data.message.question)
         updateAnswer(data.message.answer)
+        updateCorrect(data.message.correct)
+        sceneSelect(data.message.scene)
     }
 }
 
@@ -73,14 +80,24 @@ function sceneSelect(scene){
         $("#agree-scene").hide()
     }
     if(scene == 'poll'){
-        $("#polling").show()
         $("#wait-scene").hide()
+        $("#polling").show()
         $("#agree-scene").hide()
     }
     if(scene == 'agree'){
-        $("#agree-scene").show()
         $("#wait-scene").hide()
         $("#polling").hide()
+        $("#result").hide()
+        $("#button-row").show()
+        $("#agree-scene").show()
+        questionsSeen +=1
+    }
+    if(scene == 'result'){
+        $("#wait-scene").hide()
+        $("#polling").hide()
+        $("#result").show()
+        $("#button-row").hide()
+        $("#agree-scene").show()
     }
     twitchscene = scene
     twitch.rig.log("Scene changed to: ", scene)
@@ -90,7 +107,38 @@ function updateQuestion(question){
     $("#poll-question").text(question)
 }
 function updateAnswer(answer){
+    globalAnswer = answer
+    correctResponse = null
+    response = null
     $("#agree-answer").text(answer)
+    $("#result").removeClass("winner loser neutral")
+}
+function updateCorrect(correct){
+    if(correct=="unset"){
+        correctResponse = null
+    }else{
+        correctResponse = correct
+        console.log("correctResponse = ", correct)
+        console.log("Response = ", response)
+        let message = globalAnswer.split(":")[1]
+        message = message.trim()
+        let outcome
+        if(correct){
+            outcome = "correct!"
+        }else{
+            outcome = "incorrect!"
+        }
+        message = message + " was " + outcome
+        $("#result").text(message)
+        if(response==null){
+            $("#result").addClass("neutral")
+        }else if(response==correctResponse){
+            questionsCorrect +=1
+            $("#result").addClass("winner")
+        }else{
+            $("#result").addClass("loser")
+        }
+    }
 }
 function sendAnswer(){
     let poll = $("#poll-input").val()
@@ -119,6 +167,20 @@ $(function() {
             sendAnswer()  
         }
     });
+    $("#btn-agree").click(function(){
+        response = true;
+        $("#result").text("You Agreed")
+        $("#button-row").fadeOut().promise().done(function(){
+            $("#result").fadeIn()
+        })
+    })
+    $("#btn-disagree").click(function(){
+        response = false;
+        $("#result").text("You Disagreed")
+        $("#button-row").fadeOut().promise().done(function(){
+            $("#result").fadeIn()
+        })
+    })
     // listen for incoming broadcast message from our EBS
     twitch.listen('broadcast', function (target, contentType, data) {
         twitch.rig.log('Received broadcast twitch pubsub');
@@ -133,6 +195,8 @@ $(function() {
             updateQuestion(parsed['data']['payload'])
         }else if(parsed['data']['identifier'] == 'answer'){
             updateAnswer(parsed['data']['payload'])
+        }else if(parsed['data']['identifier'] == 'correct'){
+            updateCorrect(parsed['data']['payload'])
         }
     });
 

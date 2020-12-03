@@ -166,6 +166,15 @@
     font-size: 32px;
     border: 3px solid 
 }
+.neutral{
+    background: #63697b;
+}
+.winner{
+    background: #6bde01;
+}
+.loser{
+    background: #ce1b23;
+}
 /* #polling{
     position: absolute;
     width: 100%;
