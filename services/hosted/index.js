@@ -53,8 +53,8 @@ const sendBroadcast = async (channel, data) =>{
 }
 
 const updateDB = async (type,data) =>{
-        console.log("Update "+ type +" to:", data);
-        const params = {
+    console.log("Update "+ type +" to:", data);
+    const params = {
         TableName: 'hivemind-ext',
         Key:{
             data:"data"
@@ -110,7 +110,77 @@ const scanDB = async () =>{
         IndexName: "word-index",
         ConsistentRead: false
     }
-    return await documentClient.scan(params).promise();
+    let scanned = await documentClient.scan(params).promise();
+    let hold = []
+    let items = scanned.Items
+    console.log("ITEMS SCANNED:",items.length)
+    items.forEach(function(obj,i){
+        console.log(i);
+        console.log(obj);
+        var params = {
+            TableName: 'hivemind-response',
+            ReturnValues: 'NONE',
+            ReturnConsumedCapacity: 'NONE',
+            ReturnItemCollectionMetrics: 'NONE'
+        }
+        documentClient.delete(params, function(err,data){
+            if(err){
+                console.log(err)
+            }
+        })
+    })
+    console.log("DONE")
+    return("DONE")
+}
+const resetDB = async () =>{
+    console.log("resetDB----");
+    let params = {
+        TableName: 'hivemind-data',
+    }
+    let scanned = await documentClient.scan(params).promise();
+    let hold = []
+    let items = scanned.Items
+    console.log("ITEMS SCANNED:",items.length, items)
+    let x = await Promise.all(items.map(async(item)=>{
+        console.log(item.word)
+        let params = {
+            TableName: 'hivemind-data',
+            Key:{
+                "placeholder":"placeholder",
+                "word":item.word
+            }
+        }
+        await documentClient.delete(params, function(err,data){
+            if (err) {
+                console.error("Unable to delete item. Error JSON:", JSON.stringify(err, null, 2));
+            } else {
+                console.log("DeleteItem succeeded:", JSON.stringify(data, null, 2));
+            }
+        }).promise()
+    }))
+    let params2 = {
+        TableName: 'hivemind-ext',
+        Key:{
+            data:"data"
+        },
+        UpdateExpression: "SET #a =:a,#b = :b,#c=:c, #d=:d",
+        ExpressionAttributeNames:{
+            "#a": "scene",
+            "#b": "answer",
+            "#c": "question",
+            "#d": "correct"
+        },
+        ExpressionAttributeValues:{
+            ":a":"wait",
+            ":b":"???",
+            ":c": " ",
+            ":d":"unset"
+        },
+        ReturnValues:"UPDATED_NEW"
+    };
+    let updated = await documentClient.update(params2).promise();
+    console.log("DONE!!!!!", updated)
+    return("DONE")
 }
 
 const mainHandler = async(parsed, event) =>{
@@ -126,7 +196,17 @@ const mainHandler = async(parsed, event) =>{
                   payload:payload
                 }
             }
-            let [updated, broadcastResult] = await Promise.all([updateDB(catagory, payload),sendBroadcast('21314155', JSON.stringify(message))]);
+            if(catagory=="correct"){
+                let catagory2 = "scene"
+                let payload2 = "result"
+                let [updated, ignore, broadcastResult] = await Promise.all([updateDB(catagory, payload),updateDB(catagory2, payload2),sendBroadcast('21314155', JSON.stringify(message))]);
+            }else if(catagory=="answer"){
+                let catagory2 = "correct"
+                let payload2 = "unset"
+                let [updated, ignore, broadcastResult] = await Promise.all([updateDB(catagory, payload),updateDB(catagory2, payload2),sendBroadcast('21314155', JSON.stringify(message))]);
+            } else {
+                let [updated, broadcastResult] = await Promise.all([updateDB(catagory, payload),sendBroadcast('21314155', JSON.stringify(message))]);
+            }
             let ret = {
                 id:catagory,
                 data: payload
@@ -149,6 +229,14 @@ const mainHandler = async(parsed, event) =>{
                 data: results
             }
             return(ret)
+        }else if(parsed['flag']=="sendReset"){
+            let results = await resetDB()
+            console.log("RESET RESPONSE", results)
+            let ret = {
+                id:"reset-results",
+                data: results
+            }
+            return(ret)
         }
     }else if(event['httpMethod']=="GET"){
         console.log("GET received")
@@ -160,7 +248,8 @@ const mainHandler = async(parsed, event) =>{
             AttributesToGet: [
                 'scene',
                 'answer',
-                'question'
+                'question',
+                'correct'
             ]
         };
         let ret = await documentClient.get(params).promise();
@@ -170,7 +259,8 @@ const mainHandler = async(parsed, event) =>{
           data:{
             scene : ret['Item']['scene'],
             question : ret['Item']['question'],
-            answer : ret['Item']['answer']
+            answer : ret['Item']['answer'],
+            correct: ret['Item']['correct']
           }
         }
         console.log("M",message)

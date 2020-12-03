@@ -115,6 +115,7 @@
     height: 145px;
     width: 770px;
     border-radius: 14px;
+    display: none;
 }
 #agree-answer{
     font-family: 'RoobertTW';
@@ -157,6 +158,7 @@
     color:rgba(255,24,98,1);
 }
 #result{
+    display: none;
     text-align: center;
     width: 58%;
     margin: auto;
