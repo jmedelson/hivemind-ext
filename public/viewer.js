@@ -8,7 +8,7 @@ var response = null;
 var correctResponse = null;
 var questionsSeen = 0;
 var questionsCorrect = 0;
-
+var channelId = '';
 // because who wants to type this every time?
 var twitch = window.Twitch.ext;
 
@@ -17,6 +17,7 @@ var requests = {
     set: createRequest('POST', 'cycle'),
     get: createRequest("GET", 'get'),
     submit: createRequest("POST", 'submit'),
+    vote: createRequest("POST", 'vote'),
 };
 
 function createRequest(type, method) {
@@ -44,7 +45,9 @@ twitch.onAuthorized(function(auth) {
     // save our credentials
     token = auth.token;
     tuid = auth.userId;
+    channelId = auth.channelId
     twitch.rig.log("ON AUTHORIZED")
+    twitch.rig.log("channel ID:", auth.channelId)
     setAuth(token);
     $.ajax(requests.get);
 });
@@ -104,6 +107,7 @@ function sceneSelect(scene){
 }
 function updateQuestion(question){
     // console.log("changing question to: ",question)
+    globalQuestion = question;
     $("#poll-question").text(question)
 }
 function updateAnswer(answer){
@@ -174,6 +178,17 @@ $(function() {
         $("#button-row").fadeOut().promise().done(function(){
             $("#result").fadeIn()
         })
+        let message = {
+            "flag":"vote",
+            "payload": true,
+            "channel": channelId,
+            "question": globalQuestion,
+            "answer": globalAnswer
+        }
+        // twitch.rig.log(message)
+        // console.log(message)
+        requests.vote['data'] = JSON.stringify(message)
+        $.ajax(requests.vote);
     })
     $("#btn-disagree").click(function(){
         response = false;
@@ -181,6 +196,17 @@ $(function() {
         $("#button-row").fadeOut().promise().done(function(){
             $("#result").fadeIn()
         })
+        let message = {
+            "flag":"vote",
+            "payload": false,
+            "channel": channelId,
+            "question": globalQuestion,
+            "answer": globalAnswer
+        }
+        // twitch.rig.log(message)
+        // console.log(message)
+        requests.vote['data'] = JSON.stringify(message)
+        $.ajax(requests.vote);
     })
     // listen for incoming broadcast message from our EBS
     twitch.listen('broadcast', function (target, contentType, data) {
