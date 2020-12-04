@@ -103,6 +103,58 @@ const queryDB = async () =>{
     }
     return await documentClient.query(params).promise();
 }
+const voteDB = async (data) =>{
+    console.log("voteDB: "+ data);
+    let channel = data['channel']
+    let vote
+    if(data['payload']){
+        vote = "agree"
+    }else{
+        vote = "disagree"
+    }
+    let question2 = data['question']
+    console.log('question2.....',question2,vote,channel)
+    let answer = data['answer']
+    let sortK = channel+'//'+answer
+    let params = {
+        TableName: 'hivemind-data',
+        Key:{
+            "placeholder": question2,
+            "word": sortK
+        },
+        UpdateExpression: 'ADD #a :y',
+        ExpressionAttributeNames:{
+            "#a": vote,
+            // "#b": 'count'
+        },
+        ExpressionAttributeValues:{
+            ":y":1,
+        },
+        ReturnValues:"NONE"
+    };
+    let updated = await documentClient.update(params).promise();
+    return updated;
+}
+const addQuestion = async (question) =>{
+    //must create by hand
+     console.log("addQuestion: "+ question);
+      let params = {
+        TableName: 'hivemind-data',
+        Key:{
+            "placeholder": "questionHolder",
+            "word": "placeholder"
+        },
+        UpdateExpression: 'SET #a = list_append(#a, :vals)',
+        ExpressionAttributeNames:{
+            "#a": "questionList",
+        },
+        ExpressionAttributeValues:{
+            ":vals": [question],
+        },
+        ReturnValues:"NONE"
+    };
+    let updated = await documentClient.update(params).promise();
+}
 const scanDB = async () =>{
     console.log("scanDB----");
     const params = {
@@ -200,6 +252,8 @@ const mainHandler = async(parsed, event) =>{
                 let catagory2 = "scene"
                 let payload2 = "result"
                 let [updated, ignore, broadcastResult] = await Promise.all([updateDB(catagory, payload),updateDB(catagory2, payload2),sendBroadcast('21314155', JSON.stringify(message))]);
+            }else if(catagory=='question'){
+                let [updated, ignore, broadcastResult] = await Promise.all([updateDB(catagory, payload),addQuestion(payload),sendBroadcast('21314155', JSON.stringify(message))]);
             }else if(catagory=="answer"){
                 let catagory2 = "correct"
                 let payload2 = "unset"
@@ -221,6 +275,8 @@ const mainHandler = async(parsed, event) =>{
                 data: payload
             }
             return(ret)
+        }else if(parsed['flag']=="vote"){
+            await voteDB(parsed)
         }else if(parsed['flag']=="getResponses"){
             let results = await queryDB()
             console.log("RESPONSE", results)
