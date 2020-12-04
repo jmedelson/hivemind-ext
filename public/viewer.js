@@ -9,6 +9,7 @@ var correctResponse = null;
 var questionsSeen = 0;
 var questionsCorrect = 0;
 var channelId = '';
+var submittedAnswer = false
 // because who wants to type this every time?
 var twitch = window.Twitch.ext;
 
@@ -83,6 +84,9 @@ function sceneSelect(scene){
         $("#agree-scene").hide()
     }
     if(scene == 'poll'){
+        submittedAnswer == false
+        $('#input-div').show()
+        $("#submitted-div").hide()
         $("#wait-scene").hide()
         $("#polling").show()
         $("#agree-scene").hide()
@@ -93,7 +97,7 @@ function sceneSelect(scene){
         $("#result").hide()
         $("#button-row").show()
         $("#agree-scene").show()
-        questionsSeen +=1
+        questionsSeen +=1 // if they had the chance to vote add 1
     }
     if(scene == 'result'){
         $("#wait-scene").hide()
@@ -101,6 +105,7 @@ function sceneSelect(scene){
         $("#result").show()
         $("#button-row").hide()
         $("#agree-scene").show()
+        $("#score-box").text(questionsCorrect+'/'+questionsSeen+' Correct')
     }
     twitchscene = scene
     twitch.rig.log("Scene changed to: ", scene)
@@ -144,9 +149,16 @@ function updateCorrect(correct){
             $("#result").addClass("loser")
         }
     }
+    
 }
-function sendAnswer(){
+function sendAnswer(){    
+    if(submittedAnswer == true){
+        return
+    }else{
+        submittedAnswer == false
+    }
     let poll = $("#poll-input").val()
+    $("#submitted-text").text('Submitted: '+ poll)
     poll = poll.toLowerCase();
     poll = poll.trim()
     const punctuation = /[!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~]/g;
@@ -154,6 +166,9 @@ function sendAnswer(){
     if(poll.length<1){
         return;
     }
+    $("#input-div").fadeOut().promise().done(function(){
+        $("#submitted-div").fadeIn()
+    })
     let message = {
         "flag":"poll-ans",
         "payload": poll

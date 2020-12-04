@@ -13,8 +13,11 @@
     left: 0;
     right: 0;
     text-align: center;
+    /* font-size: 34px;
+    font-weight: bolder;
+    padding: 15px 0px; */
 }
-#wait-scene{
+/* #wait-scene{
     top: 50%;
     transform: translateY(-50%);
     text-align: center;
@@ -25,12 +28,26 @@
     color: yellow;
     background: blue;
     display: none;
+} */
+#wait-scene{
+    position: absolute;
+    left: 30px;
+    bottom: 45px;
+    background: #9147ff;
+    height: 145px;
+    width: 770px;
+    border-radius: 14px;
+    display: none;
 }
 #wait-scene H1{
-    font-size: 100px;
+    font-size: 35px;
+    text-align: center;
+    color: white;
 }
 #wait-scene H2{
-    font-size: 30px;
+    font-size: 35px;
+    text-align: center;
+    color: white;
 }
 #polling{
     position: absolute;
@@ -106,6 +123,26 @@
     margin-bottom: 2px;
     font-size: 23px;
 }
+#submitted-div{
+    display: none;
+    text-align: center;
+    /* width: 60%; */
+    /* margin: auto; */
+    position: relative;
+    left: 50%;
+    float: left;
+    
+}
+#submitted-text{
+    position: relative;
+    left: -50%;
+    float: left;
+    color: white;
+    font-size: 28px;
+    border: 3px solid;
+    margin-top: 10px;
+    padding: 5px 15px;
+}
 #agree-scene{
     position: absolute;
     left: 30px;
@@ -164,7 +201,7 @@
     margin: auto;
     color: white;
     font-size: 32px;
-    border: 3px solid 
+    border: 3px solid; 
 }
 .neutral{
     background: #63697b;
