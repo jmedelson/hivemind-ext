@@ -3,16 +3,27 @@
     font-family: RoobertTW;
     src: url("./fonts/RoobertTW-Regular.otf") format("opentype");
 }
+#main{
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    height: 190px;
+    width: 800px;
+    transform-origin: bottom left;
+    transform: scale(1);
+}
 #score-box{
     position: absolute;
     margin: auto;
     left: 0;
     right: 0;
     width: 20%;
-    border: 5px solid black;
+    border: 5px solid white;
     left: 0;
     right: 0;
     text-align: center;
+    color:white;
+    font-size: 1.4vw;
     /* font-size: 34px;
     font-weight: bolder;
     padding: 15px 0px; */
@@ -31,8 +42,9 @@
 } */
 #wait-scene{
     position: absolute;
-    left: 30px;
-    bottom: 45px;
+    right: 0;
+    /* left: 30px; */
+    /* bottom: 45px; */
     background: #9147ff;
     height: 145px;
     width: 770px;
@@ -40,19 +52,22 @@
     display: none;
 }
 #wait-scene H1{
-    font-size: 35px;
+    font-size: 44px;
     text-align: center;
     color: white;
+    margin-bottom: 14px;
 }
 #wait-scene H2{
-    font-size: 35px;
+    font-size: 26px;
     text-align: center;
     color: white;
+    margin-top: 0px;
 }
 #polling{
     position: absolute;
-    left: 30px;
-    bottom: 45px;
+    right: 0;
+    /* left: 30px; */
+    /* bottom: 45px; */
     background: #9147ff;
     height: 145px;
     width: 770px;
@@ -145,8 +160,9 @@
 }
 #agree-scene{
     position: absolute;
-    left: 30px;
-    bottom: 45px;
+    right: 0;
+    /* left: 30px; */
+    /* bottom: 45px; */
     background: #9147ff;
     background: linear-gradient(135deg, rgba(145,71,255,1) 0%, rgba(255,24,98,1) 100%);
     height: 145px;

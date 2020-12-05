@@ -10,6 +10,7 @@ var questionsSeen = 0;
 var questionsCorrect = 0;
 var channelId = '';
 var submittedAnswer = false
+var lastsize = 0;
 // because who wants to type this every time?
 var twitch = window.Twitch.ext;
 
@@ -40,6 +41,29 @@ function setAuth(token) {
 
 twitch.onContext(function(context) {
     twitch.rig.log("CONTEXT",context);
+    let displayResolution = context['displayResolution'].split("x")
+    let videoX = parseInt(displayResolution[0])
+    if(videoX != lastsize){
+        lastsize = videoX
+        let defaultX = 1280;
+        let scaleX = videoX/defaultX
+        console.log("ScaleX:", scaleX)
+        let propertyX = "scale("+ scaleX +")"
+        document.getElementById("main").style.transform = propertyX
+    }
+    // let videoY = parseInt(displayResolution[1])
+    // let scaleX = videoX/defaultX
+    // console.log("ScaleX:", scaleX)
+    // let propertyX = "scale("+ scaleX +")"
+    // $("#main").css("transform", "propertyX")
+    // console.log("propertyX:", propertyX)
+
+    // let scaleY = videoY/defaultY
+    // console.log("ScaleY:", scaleY)
+    // let propertyY = "scale("+ scaleY +")"
+    // $("#main").css({"transform": "propertyY"})
+    // document.getElementById("main").style.transform = propertyX
+    // console.log("propertyY:", propertyY)
 });
 
 twitch.onAuthorized(function(auth) {
@@ -52,7 +76,6 @@ twitch.onAuthorized(function(auth) {
     setAuth(token);
     $.ajax(requests.get);
 });
-
 function updateBlock(res) {
     twitch.rig.log("UPDATE BLOCK", res)
     console.log("UPDATE BLOCK",res)
@@ -90,6 +113,8 @@ function sceneSelect(scene){
         $("#wait-scene").hide()
         $("#polling").show()
         $("#agree-scene").hide()
+        correctResponse = null
+        response = null
     }
     if(scene == 'agree'){
         $("#wait-scene").hide()
@@ -105,7 +130,7 @@ function sceneSelect(scene){
         $("#result").show()
         $("#button-row").hide()
         $("#agree-scene").show()
-        $("#score-box").text(questionsCorrect+'/'+questionsSeen+' Correct')
+        $("#score-box-text").text(questionsCorrect+'/'+questionsSeen+' Correct')
     }
     twitchscene = scene
     twitch.rig.log("Scene changed to: ", scene)
@@ -117,8 +142,6 @@ function updateQuestion(question){
 }
 function updateAnswer(answer){
     globalAnswer = answer
-    correctResponse = null
-    response = null
     $("#agree-answer").text(answer)
     $("#result").removeClass("winner loser neutral")
 }
@@ -126,7 +149,6 @@ function updateCorrect(correct){
     if(correct=="unset"){
         correctResponse = null
     }else{
-        sceneSelect("result")
         correctResponse = correct
         console.log("correctResponse = ", correct)
         console.log("Response = ", response)
@@ -140,6 +162,7 @@ function updateCorrect(correct){
         }
         message = message + " was " + outcome
         $("#result").text(message)
+        console.log("results: ",response, correctResponse,response==correctResponse)
         if(response==null){
             $("#result").addClass("neutral")
         }else if(response==correctResponse){
@@ -148,6 +171,7 @@ function updateCorrect(correct){
         }else{
             $("#result").addClass("loser")
         }
+        sceneSelect("result")
     }
     
 }
@@ -224,8 +248,25 @@ $(function() {
         $.ajax(requests.vote);
     })
     // listen for incoming broadcast message from our EBS
-    twitch.listen('broadcast', function (target, contentType, data) {
-        twitch.rig.log('Received broadcast twitch pubsub');
+    // twitch.listen('broadcast', function (target, contentType, data) {
+    //     twitch.rig.log('Received broadcast twitch pubsub');
+    //     twitch.rig.log("target",target);
+    //     twitch.rig.log("contentType",contentType);
+    //     twitch.rig.log("data",data);
+    //     parsed = JSON.parse(data)
+    //     console.log(parsed['data'])
+    //     if(parsed['data']['identifier'] == 'scene'){
+    //         sceneSelect(parsed['data']['payload'])
+    //     }else if(parsed['data']['identifier'] == 'question'){
+    //         updateQuestion(parsed['data']['payload'])
+    //     }else if(parsed['data']['identifier'] == 'answer'){
+    //         updateAnswer(parsed['data']['payload'])
+    //     }else if(parsed['data']['identifier'] == 'correct'){
+    //         updateCorrect(parsed['data']['payload'])
+    //     }
+    // });
+    twitch.listen('global', function (target, contentType, data) {
+        twitch.rig.log('Received global twitch pubsub');
         twitch.rig.log("target",target);
         twitch.rig.log("contentType",contentType);
         twitch.rig.log("data",data);

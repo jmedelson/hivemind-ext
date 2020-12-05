@@ -8,40 +8,43 @@
     <div id="app" class="full-height">
         <div id="content">
             <div id="score-box">
-                <h1>0/0 Correct</h1>
+                <h1 id="score-box-text">0/0 Correct</h1>
             </div>
-            <div id='wait-scene'>
-                <h1>HIVE MIND</h1>
-                <h2>Please wait for next round to begin</h2>
-            </div>
-            <!-- <div id="polling">
-                <div class="spacer"></div>
-                <h1 id="poll-question">
-                    Name something people are afraid of.
-                </h1>
-                <div class="spacer2"></div>
-                <input type="text" id="poll-input">
-                <button type="button" id='poll-submit'>Submit</button>
-            </div> -->
-            <div id="polling">
-                <p id="nextQ">NEXT SURVEY QUESTION</p>
-                <p id="poll-question">Name an animal you would not want to share a car with</p>
-                <div id='input-div'>
-                    <input type="text" id="poll-input" maxlength="20">
-                    <a  id='poll-submit' class="link-button">S U B M I T</a>    
+            <div id="main">
+                <div id='wait-scene'>
+                    <h1>HIVEMIND</h1>
+                    <h2>Please wait for next round to begin!</h2>
                 </div>
-                <div id="submitted-div">
-                    <div id="submitted-text">Submitted: </div>
+                <!-- <div id="polling">
+                    <div class="spacer"></div>
+                    <h1 id="poll-question">
+                        Name something people are afraid of.
+                    </h1>
+                    <div class="spacer2"></div>
+                    <input type="text" id="poll-input">
+                    <button type="button" id='poll-submit'>Submit</button>
+                </div> -->
+                <div id="polling">
+                    <p id="nextQ">NEXT SURVEY QUESTION</p>
+                    <p id="poll-question">Name an animal you would not want to share a car with</p>
+                    <div id='input-div'>
+                        <input type="text" id="poll-input" maxlength="20">
+                        <a  id='poll-submit' class="link-button">S U B M I T</a>    
+                    </div>
+                    <div id="submitted-div">
+                        <div id="submitted-text">Submitted: </div>
+                    </div>
+                </div>
+                <div id="agree-scene">
+                    <p id="agree-answer">xQc says: Sun</p>
+                    <div id="button-row">
+                        <a  id='btn-agree' class="link-button">A G R E E</a>
+                        <a  id='btn-disagree' class="link-button">D I S A G R E E</a>
+                    </div>
+                    <div id="result">You did not guess</div>
                 </div>
             </div>
-            <div id="agree-scene">
-                <p id="agree-answer">xQc says: Sun</p>
-                <div id="button-row">
-                    <a  id='btn-agree' class="link-button">A G R E E</a>
-                    <a  id='btn-disagree' class="link-button">D I S A G R E E</a>
-                </div>
-                <div id="result">You did not guess</div>
-            </div>
+            
             <!-- <div id="agree-scene">
                 <div class="spacer"></div>
                 <h1 id="agree-answer">
