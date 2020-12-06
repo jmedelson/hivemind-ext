@@ -15,15 +15,15 @@ const verifyAndDecode = (auth) => {
     }
 };
 const makeServerToken = channelID => {
-    const serverTokenDurationSec = 60;
+    const serverTokenDurationSec = 30;
   
     const payload = {
       exp: Math.floor(Date.now() / 1000) + serverTokenDurationSec,
-      channel_id: channelID,
+      channel_id: "all",
       user_id: process.env.ownerId,
       role: 'external',
       pubsub_perms: {
-        send: ["broadcast"],
+        send: ["global"],
       },
     };
     
@@ -33,7 +33,8 @@ const makeServerToken = channelID => {
 
 const sendBroadcast = async (channel, data) =>{
     console.log("Sending broadcast", channel, data)
-    const link = `https://api.twitch.tv/extensions/message/` + channel
+    // const link = `https://api.twitch.tv/extensions/message/` + channel
+    const link = "https://api.twitch.tv/extensions/message/all"
     const bearerPrefix = 'Bearer ';
     const request = {
         method: 'POST',
@@ -46,12 +47,27 @@ const sendBroadcast = async (channel, data) =>{
         data : JSON.stringify({
           content_type: 'application/json',
           message: data,
-          targets: ['broadcast']
+          targets: ['global']
         })
     }
     return await axios(request)
 }
-
+const getDB = async () =>{
+    const params = {
+            TableName: 'hivemind-ext',
+            Key:{
+                data:"data"
+            },
+            AttributesToGet: [
+                'scene',
+                'answer',
+                'question',
+                'correct'
+            ]
+        };
+    let ret = await documentClient.get(params).promise();
+    return ret;
+}
 const updateDB = async (type,data) =>{
     console.log("Update "+ type +" to:", data);
     const params = {
@@ -89,20 +105,34 @@ const updateDB2 = async (word) =>{
     return await documentClient.update(params).promise();
 }
 
-const queryDB = async () =>{
-    console.log("queryDB----");
+const queryDB = async (placeholder) =>{
+    console.log("queryDB----", placeholder);
     const params = {
         TableName: 'hivemind-data',
         IndexName: "main-index",
         KeyConditionExpression: 'placeholder = :placeholder',
         ExpressionAttributeValues: {
-            ':placeholder': "placeholder"
+            ':placeholder': placeholder
         },
         ConsistentRead: false,
         ScanIndexForward: false
     }
     return await documentClient.query(params).promise();
 }
+const queryDB2 = async (placeholder) =>{
+    console.log("queryDB2----", placeholder);
+    const params = {
+        TableName: 'hivemind-data',
+        KeyConditionExpression: 'placeholder = :placeholder',
+        ExpressionAttributeValues: {
+            ':placeholder': placeholder
+        },
+        ConsistentRead: false,
+        ScanIndexForward: false
+    }
+    return await documentClient.query(params).promise();
+}
+
 const voteDB = async (data) =>{
     console.log("voteDB: "+ data);
     let channel = data['channel']
@@ -135,25 +165,50 @@ const voteDB = async (data) =>{
     let updated = await documentClient.update(params).promise();
     return updated;
 }
-const addQuestion = async (question) =>{
-    //must create by hand
-     console.log("addQuestion: "+ question);
-      let params = {
+const addQuestion = async (question,getOnly = false) =>{
+    //dynamo db entry must be created by hand for list
+    
+    console.log("addQuestion: "+ question);
+    let params = {
         TableName: 'hivemind-data',
         Key:{
             "placeholder": "questionHolder",
             "word": "placeholder"
         },
-        UpdateExpression: 'SET #a = list_append(#a, :vals)',
-        ExpressionAttributeNames:{
-            "#a": "questionList",
-        },
-        ExpressionAttributeValues:{
-            ":vals": [question],
-        },
-        ReturnValues:"NONE"
-    };
-    let updated = await documentClient.update(params).promise();
+        AttributesToGet: [
+            'questionList'
+        ]
+    }
+    let questionList = await documentClient.get(params).promise();
+    // console.log("CHECK!!!!= ", getOnly, questionList)
+    if(getOnly){
+        console.log("getOnly======",questionList)
+        return questionList['Item']['questionList']
+    }
+    console.log("questionList:", questionList)
+    console.log("Is question in list: ", questionList['Item']['questionList'].includes(question))
+    if(questionList['Item']['questionList'].includes(question)){
+       console.log("question already in Database") 
+    }
+    else{
+        let params2 = {
+            TableName: 'hivemind-data',
+            Key:{
+                "placeholder": "questionHolder",
+                "word": "placeholder"
+            },
+            UpdateExpression: 'SET #a = list_append(#a, :vals)',
+            ExpressionAttributeNames:{
+                "#a": "questionList",
+            },
+            ExpressionAttributeValues:{
+                ":vals": [question],
+            },
+            ReturnValues:"NONE"
+        };
+        let updated = await documentClient.update(params2).promise(); 
+    }
+    
 }
 const scanDB = async () =>{
     console.log("scanDB----");
@@ -251,15 +306,15 @@ const mainHandler = async(parsed, event) =>{
             if(catagory=="correct"){
                 let catagory2 = "scene"
                 let payload2 = "result"
-                let [updated, ignore, broadcastResult] = await Promise.all([updateDB(catagory, payload),updateDB(catagory2, payload2),sendBroadcast('21314155', JSON.stringify(message))]);
+                let [updated, ignore, broadcastResult] = await Promise.all([updateDB(catagory, payload),updateDB(catagory2, payload2),sendBroadcast(process.env.ownerId, JSON.stringify(message))]);
             }else if(catagory=='question'){
-                let [updated, ignore, broadcastResult] = await Promise.all([updateDB(catagory, payload),addQuestion(payload),sendBroadcast('21314155', JSON.stringify(message))]);
+                let [updated, ignore, broadcastResult] = await Promise.all([updateDB(catagory, payload),addQuestion(payload),sendBroadcast(process.env.ownerId, JSON.stringify(message))]);
             }else if(catagory=="answer"){
                 let catagory2 = "correct"
                 let payload2 = "unset"
-                let [updated, ignore, broadcastResult] = await Promise.all([updateDB(catagory, payload),updateDB(catagory2, payload2),sendBroadcast('21314155', JSON.stringify(message))]);
+                let [updated, ignore, broadcastResult] = await Promise.all([updateDB(catagory, payload),updateDB(catagory2, payload2),sendBroadcast(process.env.ownerId, JSON.stringify(message))]);
             } else {
-                let [updated, broadcastResult] = await Promise.all([updateDB(catagory, payload),sendBroadcast('21314155', JSON.stringify(message))]);
+                let [updated, broadcastResult] = await Promise.all([updateDB(catagory, payload),sendBroadcast(String(process.env.ownerId), JSON.stringify(message))]);
             }
             let ret = {
                 id:catagory,
@@ -278,7 +333,7 @@ const mainHandler = async(parsed, event) =>{
         }else if(parsed['flag']=="vote"){
             await voteDB(parsed)
         }else if(parsed['flag']=="getResponses"){
-            let results = await queryDB()
+            let results = await queryDB("placeholder")
             console.log("RESPONSE", results)
             let ret = {
                 id:"POLL-results",
@@ -293,22 +348,25 @@ const mainHandler = async(parsed, event) =>{
                 data: results
             }
             return(ret)
+        }else if(parsed['flag']=='question-data'){
+            let results = await addQuestion("no question",true)
+            let ret = {
+                id:"question-data",
+                data: results
+            }
+            return(ret)
+        }else if(parsed['flag']=='answer-data'){
+            let results = await queryDB2(parsed['payload'])
+            let ret = {
+                id:"answer-data",
+                data: results
+            }
+            return(ret)
         }
     }else if(event['httpMethod']=="GET"){
         console.log("GET received")
-        const params = {
-            TableName: 'hivemind-ext',
-            Key:{
-                data:"data"
-            },
-            AttributesToGet: [
-                'scene',
-                'answer',
-                'question',
-                'correct'
-            ]
-        };
-        let ret = await documentClient.get(params).promise();
+        
+        let ret = await getDB()
         console.log(ret)
         let message = {
           id:"data",
