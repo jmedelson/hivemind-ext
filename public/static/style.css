@@ -12,7 +12,7 @@
     transform-origin: bottom left;
     transform: scale(1);
 }
-#score-box{
+/* #score-box{
     position: absolute;
     margin: auto;
     left: 0;
@@ -26,8 +26,8 @@
     font-size: 1.4vw;
     /* font-size: 34px;
     font-weight: bolder;
-    padding: 15px 0px; */
-}
+    padding: 15px 0px;
+} */
 /* #wait-scene{
     top: 50%;
     transform: translateY(-50%);

@@ -11,6 +11,9 @@ var questionsCorrect = 0;
 var channelId = '';
 var submittedAnswer = false
 var lastsize = 0;
+var limitEnabled = false;
+var responseLimit = 0
+
 // because who wants to type this every time?
 var twitch = window.Twitch.ext;
 
@@ -82,6 +85,8 @@ function updateBlock(res) {
     let data = JSON.parse(res)
     console.log("MMM", data.message)
     if(data.id == 'data'){
+        responseLimit = data.message.limit;
+        limitEnabled = data.message.displayLimit
         updateQuestion(data.message.question)
         updateAnswer(data.message.answer)
         updateCorrect(data.message.correct)
@@ -130,7 +135,7 @@ function sceneSelect(scene){
         $("#result").show()
         $("#button-row").hide()
         $("#agree-scene").show()
-        $("#score-box-text").text(questionsCorrect+'/'+questionsSeen+' Correct')
+        // $("#score-box-text").text(questionsCorrect+'/'+questionsSeen+' Correct')
     }
     twitchscene = scene
     twitch.rig.log("Scene changed to: ", scene)
@@ -179,7 +184,7 @@ function sendAnswer(){
     if(submittedAnswer == true){
         return
     }else{
-        submittedAnswer == false
+        submittedAnswer == true
     }
     let poll = $("#poll-input").val()
     $("#submitted-text").text('Submitted: '+ poll)
@@ -281,6 +286,19 @@ $(function() {
             updateAnswer(parsed['data']['payload'])
         }else if(parsed['data']['identifier'] == 'correct'){
             updateCorrect(parsed['data']['payload'])
+        }else if(parsed['data']['identifier'] == 'limit'){
+            responseLimit = parsed['data']['payload']
+        }else if(parsed['data']['identifier'] == 'displayLimit'){
+            limitEnabled = parsed['data']['payload']
+        }else if(parsed['data']['identifier'] == 'limitReached'){
+            if(limitEnabled){
+                if(!submittedAnswer){
+                    $("#submitted-text").text("Poll Response Limit Hit")
+                    $("#input-div").fadeOut().promise().done(function(){
+                        $("#submitted-div").fadeIn()
+                    })
+                }
+            }
         }
     });
 
