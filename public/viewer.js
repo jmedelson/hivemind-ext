@@ -195,7 +195,8 @@ function sendAnswer(){
     })
     let message = {
         "flag":"poll-ans",
-        "payload": poll
+        "payload": poll,
+        "question": globalQuestion
     }
     requests.submit['data'] = JSON.stringify(message)
     $.ajax(requests.submit);

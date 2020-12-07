@@ -67,3 +67,5 @@ typings/
 # IntelliJ IDE files
 .idea
 public/static/fonts/RoobertTW-Regular.otf
+public/hosted.zip
+services/hosted/index.zip
