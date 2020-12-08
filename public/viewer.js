@@ -183,9 +183,8 @@ function updateCorrect(correct){
 function sendAnswer(){    
     if(submittedAnswer == true){
         return
-    }else{
-        submittedAnswer == true
     }
+    submittedAnswer = true
     let poll = $("#poll-input").val()
     $("#submitted-text").text('Submitted: '+ poll)
     poll = poll.toLowerCase();
@@ -201,7 +200,8 @@ function sendAnswer(){
     let message = {
         "flag":"poll-ans",
         "payload": poll,
-        "question": globalQuestion
+        "question": globalQuestion,
+        "limit": responseLimit
     }
     requests.submit['data'] = JSON.stringify(message)
     $.ajax(requests.submit);
@@ -292,6 +292,8 @@ $(function() {
             limitEnabled = parsed['data']['payload']
         }else if(parsed['data']['identifier'] == 'limitReached'){
             if(limitEnabled){
+                console.log("Limit reached received//Limit Enabled:", limitEnabled)
+                console.log("Limit reached received//submittedAnswer", submittedAnswer)
                 if(!submittedAnswer){
                     $("#submitted-text").text("Poll Response Limit Hit")
                     $("#input-div").fadeOut().promise().done(function(){
