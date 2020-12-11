@@ -11,6 +11,8 @@
                 <h1 id="score-box-text">0/0 Correct</h1>
             </div> -->
             <div id="main">
+                <div id="scroll-bar"></div>
+                <div id="triangle"></div>
                 <div id='wait-scene'>
                     <h1>HIVEMIND</h1>
                     <h2>Please wait for next round to begin!</h2>
@@ -28,7 +30,7 @@
                     <p id="nextQ">NEXT SURVEY QUESTION</p>
                     <p id="poll-question">Name an animal you would not want to share a car with</p>
                     <div id='input-div'>
-                        <input type="text" id="poll-input" maxlength="20" autocomplete="off">
+                        <input type="text" id="poll-input"  autocomplete="off" placeholder="Enter your answer here!">
                         <a  id='poll-submit' class="link-button">S U B M I T</a>    
                     </div>
                     <div id="submitted-div">
@@ -36,10 +38,11 @@
                     </div>
                 </div>
                 <div id="agree-scene">
-                    <p id="agree-answer">xQc says: Sun</p>
+                    <div id="slash"></div>
+                    <p id="agree-answer">Do you...</p>
                     <div id="button-row">
-                        <a  id='btn-agree' class="link-button">A G R E E</a>
-                        <a  id='btn-disagree' class="link-button">D I S A G R E E</a>
+                        <a  id='btn-agree' class="choice-button button-animations">A G R E E</a>
+                        <a  id='btn-disagree' class="choice-button button-animations">D I S A G R E E</a>
                     </div>
                     <div id="result">You did not guess</div>
                 </div>

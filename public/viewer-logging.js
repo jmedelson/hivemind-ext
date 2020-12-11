@@ -10,8 +10,7 @@ var questionsSeen = 0;
 var questionsCorrect = 0;
 var channelId = '';
 var submittedAnswer = false
-var lastsizex = 0;
-var lastsizey = 0;
+var lastsize = 0;
 var limitEnabled = false;
 var responseLimit = 0
 
@@ -45,23 +44,15 @@ function setAuth(token) {
 
 twitch.onContext(function(context) {
     twitch.rig.log("CONTEXT",context);
-    // let displayResolution = context['displayResolution'].split("x")
-    // let videoX = parseInt(displayResolution[0])
-    // let videoY = parseInt(displayResolution[1])
-    let videoX = document.body.offsetWidth
-    let videoY = document.body.offsetHeight
-    if(videoX != lastsizex || videoY != lastsizey){
-        lastsizex = videoX;
-        lastsizey = videoY;
+    let displayResolution = context['displayResolution'].split("x")
+    let videoX = parseInt(displayResolution[0])
+    if(videoX != lastsize){
+        lastsize = videoX
         let defaultX = 1280;
         let scaleX = videoX/defaultX
-        let defaultY = 720;
-        let scaleY = videoY/defaultY
-        // console.log("ScaleX:", scaleX)
-        let propertyX = "scaleX("+ scaleX +")"
-        let propertyY = "scaleY("+ scaleY +")"
-        let scale = "scale(" + scaleX +", "+scaleY+ ")"
-        document.getElementById("main").style.transform = scale
+        console.log("ScaleX:", scaleX)
+        let propertyX = "scale("+ scaleX +")"
+        document.getElementById("main").style.transform = propertyX
     }
     // let videoY = parseInt(displayResolution[1])
     // let scaleX = videoX/defaultX
@@ -87,14 +78,12 @@ twitch.onAuthorized(function(auth) {
     twitch.rig.log("channel ID:", auth.channelId)
     setAuth(token);
     $.ajax(requests.get);
-    $("#scroll-bar").show()
-    $("#triangle").show()
 });
 function updateBlock(res) {
     twitch.rig.log("UPDATE BLOCK", res)
-    // console.log("UPDATE BLOCK",res)
+    console.log("UPDATE BLOCK",res)
     let data = JSON.parse(res)
-    // console.log("MMM", data.message)
+    console.log("MMM", data.message)
     if(data.id == 'data'){
         responseLimit = data.message.limit;
         limitEnabled = data.message.displayLimit
@@ -117,19 +106,15 @@ function logSuccess(hex, status) {
 
 function sceneSelect(scene){
     // console.log("changing scene to: ",scene)
-    if(scene == 'hide'){
-        $("#main").hide()
-    }
+    $("#scroll-bar").show()
+    $("#triangle").show()
     if(scene == 'wait'){
-        $("#main").show()
         $("#wait-scene").show()
         $("#polling").hide()
         $("#agree-scene").hide()
     }
     if(scene == 'poll'){
-        $("#main").show()
-        submittedAnswer = false
-        $("#poll-input").val("")
+        submittedAnswer == false
         $('#input-div').show()
         $("#submitted-div").hide()
         $("#wait-scene").hide()
@@ -139,32 +124,24 @@ function sceneSelect(scene){
         $("#btn-agree").addClass("button-animations")
         $("#btn-disagree").css("opacity","100%")
         $("#btn-agree").css("opacity","100%")
-        $("#slash").show()
+        $("#check").show()
         correctResponse = null
         response = null
     }
     if(scene == 'agree'){
-        $("#main").show()
-        $("#result").removeClass("winner loser neutral")
         $("#wait-scene").hide()
         $("#polling").hide()
         $("#result").hide()
         $("#button-row").show()
         $("#agree-scene").show()
         questionsSeen +=1 // if they had the chance to vote add 1
-        $("#btn-disagree").addClass("button-animations")
-        $("#btn-agree").addClass("button-animations")
-        $("#btn-disagree").css("opacity","100%")
-        $("#btn-agree").css("opacity","100%")
-        $("#slash").show()
     }
     if(scene == 'result'){
-        $("#main").show()
         $("#wait-scene").hide()
         $("#polling").hide()
         $("#result").show()
         $("#button-row").hide()
-        $("#slash").hide()
+        $("#check").hide()
         $("#agree-scene").show()
         // $("#score-box-text").text(questionsCorrect+'/'+questionsSeen+' Correct')
     }
@@ -186,8 +163,8 @@ function updateCorrect(correct){
         correctResponse = null
     }else{
         correctResponse = correct
-        // console.log("correctResponse = ", correct)
-        // console.log("Response = ", response)
+        console.log("correctResponse = ", correct)
+        console.log("Response = ", response)
         let message = globalAnswer.split(":")[1]
         message = message.trim()
         let outcome
@@ -198,7 +175,7 @@ function updateCorrect(correct){
         }
         message = message + " was " + outcome
         $("#result").text(message)
-        // console.log("results: ",response, correctResponse,response==correctResponse)
+        console.log("results: ",response, correctResponse,response==correctResponse)
         if(response==null){
             $("#result").addClass("neutral")
         }else if(response==correctResponse){
@@ -243,7 +220,7 @@ $(function() {
     });
     $("#poll-input").keypress(function(event){
         var keycode = (event.keyCode ? event.keyCode : event.which);
-        // console.log("KEYCODE",keycode)
+        console.log("KEYCODE",keycode)
         if(keycode == '13'){
             sendAnswer()  
         }
@@ -307,7 +284,7 @@ $(function() {
         twitch.rig.log("contentType",contentType);
         twitch.rig.log("data",data);
         parsed = JSON.parse(data)
-        // console.log(parsed['data'])
+        console.log(parsed['data'])
         if(parsed['data']['identifier'] == 'scene'){
             sceneSelect(parsed['data']['payload'])
         }else if(parsed['data']['identifier'] == 'question'){
@@ -322,8 +299,8 @@ $(function() {
             limitEnabled = parsed['data']['payload']
         }else if(parsed['data']['identifier'] == 'limitReached'){
             if(limitEnabled){
-                // console.log("Limit reached received//Limit Enabled:", limitEnabled)
-                // console.log("Limit reached received//submittedAnswer", submittedAnswer)
+                console.log("Limit reached received//Limit Enabled:", limitEnabled)
+                console.log("Limit reached received//submittedAnswer", submittedAnswer)
                 if(!submittedAnswer){
                     $("#submitted-text").text("Poll Response Limit Hit")
                     $("#input-div").fadeOut().promise().done(function(){
