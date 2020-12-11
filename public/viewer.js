@@ -38,13 +38,13 @@ function createRequest(type, method) {
 
 function setAuth(token) {
     Object.keys(requests).forEach((req) => {
-        twitch.rig.log('Setting auth headers');
+        // twitch.rig.log('Setting auth headers');
         requests[req].headers = { 'Authorization': 'Bearer ' + token }
     });
 }
 
 twitch.onContext(function(context) {
-    twitch.rig.log("CONTEXT",context);
+    // twitch.rig.log("CONTEXT",context);
     // let displayResolution = context['displayResolution'].split("x")
     // let videoX = parseInt(displayResolution[0])
     // let videoY = parseInt(displayResolution[1])
@@ -83,15 +83,13 @@ twitch.onAuthorized(function(auth) {
     token = auth.token;
     tuid = auth.userId;
     channelId = auth.channelId
-    twitch.rig.log("ON AUTHORIZED")
-    twitch.rig.log("channel ID:", auth.channelId)
+    // twitch.rig.log("ON AUTHORIZED")
+    // twitch.rig.log("channel ID:", auth.channelId)
     setAuth(token);
     $.ajax(requests.get);
-    $("#scroll-bar").show()
-    $("#triangle").show()
 });
 function updateBlock(res) {
-    twitch.rig.log("UPDATE BLOCK", res)
+    // twitch.rig.log("UPDATE BLOCK", res)
     // console.log("UPDATE BLOCK",res)
     let data = JSON.parse(res)
     // console.log("MMM", data.message)
@@ -106,7 +104,7 @@ function updateBlock(res) {
 }
 
 function logError(_, error, status) {
-  twitch.rig.log('EBS request returned '+status+' ('+error+')');
+//   twitch.rig.log('EBS request returned '+status+' ('+error+')');
 }
 
 function logSuccess(hex, status) {
@@ -117,6 +115,8 @@ function logSuccess(hex, status) {
 
 function sceneSelect(scene){
     // console.log("changing scene to: ",scene)
+    $("#scroll-bar").show()
+    $("#triangle").show()
     if(scene == 'hide'){
         $("#main").hide()
     }
@@ -169,7 +169,6 @@ function sceneSelect(scene){
         // $("#score-box-text").text(questionsCorrect+'/'+questionsSeen+' Correct')
     }
     twitchscene = scene
-    twitch.rig.log("Scene changed to: ", scene)
 }
 function updateQuestion(question){
     // console.log("changing question to: ",question)
@@ -302,10 +301,6 @@ $(function() {
     //     }
     // });
     twitch.listen('global', function (target, contentType, data) {
-        twitch.rig.log('Received global twitch pubsub');
-        twitch.rig.log("target",target);
-        twitch.rig.log("contentType",contentType);
-        twitch.rig.log("data",data);
         parsed = JSON.parse(data)
         // console.log(parsed['data'])
         if(parsed['data']['identifier'] == 'scene'){
