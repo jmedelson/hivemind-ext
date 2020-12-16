@@ -62,11 +62,78 @@ const getDB = async () =>{
                 'scene',
                 'answer',
                 'question',
-                'correct'
+                'correct',
+                'limit',
+                'displayLimit',
+                'displayQuestion'
             ]
         };
     let ret = await documentClient.get(params).promise();
     return ret;
+}
+const getDB2 = async () =>{
+    const params = {
+        TableName: 'hivemind-ext',
+        Key:{
+            data:"controlpanel"
+        }
+    };
+    let ret = await documentClient.get(params).promise();
+    return ret;
+}
+const setCpanel = async (field, value) =>{
+    const params = {
+        TableName: 'hivemind-ext',
+        Key:{
+            data:"controlpanel"
+        },
+        UpdateExpression: "SET #field =:a",
+        ExpressionAttributeNames:{
+            "#field": field
+        },
+        ExpressionAttributeValues:{
+            ":a":value,
+        },
+    };
+    return await documentClient.update(params).promise();
+}
+const setAllCpanel = async (data) =>{
+    const params = {
+        TableName: 'hivemind-ext',
+        Key:{
+            data:"controlpanel"
+        },
+        UpdateExpression: "SET #a =:a, #b =:b, #c =:c, #d =:d, #e =:e, #f =:f, #g =:g, #h =:h, #i =:i, #j =:j, #k =:k, #l =:l",
+        ExpressionAttributeNames:{
+            "#a": "p1life",
+            "#b": "p2life",
+            "#c": "p3life",
+            "#d": "p4life",
+            "#e": "p1score",
+            "#f": "p2score",
+            "#g": "p3score",
+            "#h": "p4score",
+            "#i": "stream1name",
+            "#j": "stream2name",
+            "#k": "stream3name",
+            "#l": "stream4name",
+        },
+        ExpressionAttributeValues:{
+            ":a": data.p1life,
+            ":b": data.p2life,
+            ":c": data.p3life,
+            ":d": data.p4life,
+            ":e": data.p1score,
+            ":f": data.p2score,
+            ":g": data.p3score,
+            ":h": data.p4score,
+            ":i": data.stream1name,
+            ":j": data.stream2name,
+            ":k": data.stream3name,
+            ":l": data.stream4name,
+        },
+    };
+    return await documentClient.update(params).promise();
 }
 const updateDB = async (type,data) =>{
     console.log("Update "+ type +" to:", data);
@@ -87,12 +154,28 @@ const updateDB = async (type,data) =>{
     return await documentClient.update(params).promise();
 }
 
-const updateDB2 = async (word) =>{
+const updateDB2 = async (word, question) =>{
     console.log("Updatedb2: "+ word);
+    let params2 = {
+        TableName: 'hivemind-words',
+        Key: {
+            "word": word
+        },
+    }
+    let ret = await documentClient.get(params2).promise();
+    console.log("ret DATA", ret)
+    if(ret.hasOwnProperty("Item")){
+        word = ret["Item"]["map"]
+        if(ret == "XXXXX"){
+            console.log("BLOCKED WORD EXIT EARLY", word)
+            return
+        }
+    }
+    let catagory = "count//"+question;
     const params = {
         TableName: 'hivemind-data',
         Key: {
-            "placeholder": "placeholder",
+            "placeholder": catagory,
             "word": word
         },
         UpdateExpression: 'ADD #a :y',
@@ -104,15 +187,34 @@ const updateDB2 = async (word) =>{
     };
     return await documentClient.update(params).promise();
 }
+const updateCount = async (question, limit) =>{
+    console.log("updateCount: "+ question +"::"+"limit");
+    let catagory = "limit//"+question;
+    const params = {
+        TableName: 'hivemind-data',
+        Key: {
+            "placeholder": catagory,
+            "word": "placeholder"
+        },
+        UpdateExpression: 'ADD #a :y',
+        ExpressionAttributeNames: {'#a' : 'count'},
+        ExpressionAttributeValues: {
+            ':y' : 1
+        },
+        ReturnValues: "UPDATED_NEW"
+    };
+    return await documentClient.update(params).promise();
+}
 
-const queryDB = async (placeholder) =>{
-    console.log("queryDB----", placeholder);
+const queryDB = async (question) =>{
+    let catagory = "count//"+ question;
+    console.log("queryDB----", catagory);
     const params = {
         TableName: 'hivemind-data',
         IndexName: "main-index",
         KeyConditionExpression: 'placeholder = :placeholder',
         ExpressionAttributeValues: {
-            ':placeholder': placeholder
+            ':placeholder': catagory
         },
         ConsistentRead: false,
         ScanIndexForward: false
@@ -120,19 +222,75 @@ const queryDB = async (placeholder) =>{
     return await documentClient.query(params).promise();
 }
 const queryDB2 = async (placeholder) =>{
-    console.log("queryDB2----", placeholder);
+    let catagory = "vote//"+ placeholder;
+    console.log("queryDB2----", catagory);
     const params = {
         TableName: 'hivemind-data',
         KeyConditionExpression: 'placeholder = :placeholder',
         ExpressionAttributeValues: {
-            ':placeholder': placeholder
+            ':placeholder': catagory
         },
         ConsistentRead: false,
         ScanIndexForward: false
     }
     return await documentClient.query(params).promise();
 }
-
+const getWordMap = async () =>{
+    console.log("GETTING WordMap")
+    const params = {
+        TableName: 'hivemind-words',
+        ConsistentRead: false
+    }
+    let scanned = await documentClient.scan(params).promise();
+    let hold = []
+    let items = scanned.Items
+    console.log("ITEMS SCANNED:",items.length, items)
+    return(items)
+}
+const setWordMap = async (word,map) =>{
+    console.log("Set WordMap: ", word,"--",map)
+    const params = {
+        TableName: 'hivemind-words',
+        Key: {
+            "word": word
+        },
+        UpdateExpression: 'SET #a = :y',
+        ExpressionAttributeNames: {'#a' : 'map'},
+        ExpressionAttributeValues: {
+            ':y' : map
+        },
+    }
+    let ret = await documentClient.update(params).promise();
+    return(ret)
+}
+const addBlockedWord = async (word) =>{
+    console.log("ADDING- ", word, " -to blocked words list")
+    const params = {
+        TableName: 'hivemind-words',
+        Key: {
+            "word": word,
+        },
+        UpdateExpression: 'SET #a = :y',
+        ExpressionAttributeNames: {'#a' : 'map'},
+        ExpressionAttributeValues: {
+            ':y' : "XXXXX"
+        },
+    }
+    let ret = await documentClient.update(params).promise();
+    console.log("RET", ret)
+    return(ret)
+}
+const deleteMap = async(word) =>{
+    console.log("deleting map:", word)
+    const params = {
+        TableName: 'hivemind-words',
+        Key: {
+            "word": word
+        }
+    }
+    let ret = await documentClient.delete(params).promise();
+    return(ret)
+}
 const voteDB = async (data) =>{
     console.log("voteDB: "+ data);
     let channel = data['channel']
@@ -143,6 +301,7 @@ const voteDB = async (data) =>{
         vote = "disagree"
     }
     let question2 = data['question']
+    question2 = "vote//" + question2;
     console.log('question2.....',question2,vote,channel)
     let answer = data['answer']
     let sortK = channel+'//'+answer
@@ -164,6 +323,63 @@ const voteDB = async (data) =>{
     };
     let updated = await documentClient.update(params).promise();
     return updated;
+}
+const removeQuestion = async(question) =>{
+    console.log("removeQuestion: "+ question);
+    let [qList, countQ, voteQ] = await Promise.all([addQuestion("",true), queryDB(question), queryDB2(question)]);
+    let check = qList.indexOf(question)
+    check = "REMOVE questionList["+check+"]"
+    console.log("query---", check)
+    let params = {
+        TableName: 'hivemind-data',
+        Key:{
+            "placeholder": "questionHolder",
+            "word": "placeholder"
+        },
+        UpdateExpression: check
+    };
+    let updated = await documentClient.update(params).promise();
+    let deleteArray = [];
+    let noError = true;
+    countQ = countQ["Items"]
+    voteQ = voteQ["Items"]
+    countQ = countQ.concat(voteQ)
+    let limitQ = {
+        placeholder: "limit//"+question,
+        word:"placeholder"
+    }
+    countQ.push(limitQ)
+    console.log(countQ)
+    for(let [index, item] of countQ.entries()){
+        let tempItem = {
+            DeleteRequest :{
+                Key:{
+                    placeholder: item.placeholder,
+                    word: item.word,
+                }
+            }
+        }
+        deleteArray.push(tempItem)
+        // console.log(countQ.length-1, index, countQ.length-1 == index, index+1 % 25, (index+1) % 25==0)
+        if(((index+1) % 25==0) || (countQ.length-1 == index)){
+            console.log("Deleting :",deleteArray.length," items")
+            let params2 = {
+                RequestItems : {
+                    'hivemind-data' : deleteArray
+                }
+            };
+            let res = await documentClient.batchWrite(params2).promise()
+            console.log("!!!!!", res)
+            if(res.UnprocessedItems.length>0){
+                noError = false
+                console.log("error flagged")
+            }
+            deleteArray = []
+        }
+    }
+    
+    // console.log("LLLLL", countQ)
+    return noError;
 }
 const addQuestion = async (question,getOnly = false) =>{
     //dynamo db entry must be created by hand for list
@@ -188,7 +404,8 @@ const addQuestion = async (question,getOnly = false) =>{
     console.log("questionList:", questionList)
     console.log("Is question in list: ", questionList['Item']['questionList'].includes(question))
     if(questionList['Item']['questionList'].includes(question)){
-       console.log("question already in Database") 
+       console.log("question already in Database")
+       return(false)
     }
     else{
         let params2 = {
@@ -208,7 +425,7 @@ const addQuestion = async (question,getOnly = false) =>{
         };
         let updated = await documentClient.update(params2).promise(); 
     }
-    
+    return(true)
 }
 const scanDB = async () =>{
     console.log("scanDB----");
@@ -306,9 +523,14 @@ const mainHandler = async(parsed, event) =>{
             if(catagory=="correct"){
                 let catagory2 = "scene"
                 let payload2 = "result"
-                let [updated, ignore, broadcastResult] = await Promise.all([updateDB(catagory, payload),updateDB(catagory2, payload2),sendBroadcast(process.env.ownerId, JSON.stringify(message))]);
+                try{
+                    let [updated, ignore, broadcastResult] = await Promise.all([updateDB(catagory, payload),updateDB(catagory2, payload2),sendBroadcast(process.env.ownerId, JSON.stringify(message))]);
+
+                }catch(e){
+                    console.log(e)
+                }
             }else if(catagory=='question'){
-                let [updated, ignore, broadcastResult] = await Promise.all([updateDB(catagory, payload),addQuestion(payload),sendBroadcast(process.env.ownerId, JSON.stringify(message))]);
+                let [updated, ignore, broadcastResult] = await Promise.all([updateDB(catagory, payload),sendBroadcast(process.env.ownerId, JSON.stringify(message))]);
             }else if(catagory=="answer"){
                 let catagory2 = "correct"
                 let payload2 = "unset"
@@ -321,10 +543,43 @@ const mainHandler = async(parsed, event) =>{
                 data: payload
             }
             return(ret)
+        }else if(parsed['flag']=="add-question"){
+            console.log("adding question: ", parsed["payload"])
+            let res = await addQuestion(parsed["payload"])
+            let ret = {
+                id:"add-question",
+                data: res
+            }
+            return ret
         }else if(parsed['flag']=="poll-ans"){
             console.log("flag = poll-ans")
             let payload = parsed['payload'];
-            let broadcastResult = await updateDB2(payload)
+            try{
+                let payload2 = payload.split(" ")
+                let filterArray = ["the", "a"]
+                if(filterArray.includes(payload2[0])){
+                    payload2.shift()
+                    payload = payload2.join(" ")
+                    console.log("article removed: ", payload)
+                }
+            }catch(e){
+                console.log("catch triggered: ", e)
+            }
+            let question = parsed['question'];
+            let limit = parsed['limit']
+            let [updated, check] = await Promise.all([updateDB2(payload,question),updateCount(question)]);
+            console.log("CHECK!!!!!----", check)
+            check = check.Attributes.count
+            if(check>= limit){
+                console.log("Limit hit: "+check+" > "+limit)
+                let message = {
+                    data:{
+                        identifier: "limitReached",
+                        payload:"limitReached"
+                    }
+                }
+                await sendBroadcast(String(process.env.ownerId), JSON.stringify(message));
+            }
             let ret = {
                 id: "poll-response",
                 data: payload
@@ -333,7 +588,8 @@ const mainHandler = async(parsed, event) =>{
         }else if(parsed['flag']=="vote"){
             await voteDB(parsed)
         }else if(parsed['flag']=="getResponses"){
-            let results = await queryDB("placeholder")
+            let question = parsed['question'];
+            let results = await queryDB(question)
             console.log("RESPONSE", results)
             let ret = {
                 id:"POLL-results",
@@ -362,6 +618,78 @@ const mainHandler = async(parsed, event) =>{
                 data: results
             }
             return(ret)
+        }else if(parsed['flag']=='cpanelData'){
+            console.log("get cpanelData")
+            let results = await getDB2()
+            let ret = {
+                id:"cpanelData",
+                data: results
+            }
+            return(ret)
+        }else if(parsed['flag']=='setCpanel'){
+            console.log("get setCpanel")
+            let results = await setCpanel(parsed['field'],parsed['payload'])
+            let ret = {
+                id:"cpanelData",
+                data: "success"
+            }
+            return(ret)
+        }else if(parsed['flag']=='setAllCpanel'){
+            console.log("setAllCpanel")
+            let results = await setAllCpanel(parsed['payload'])
+            let ret = {
+                id:"setAllCpanel",
+                data: "success"
+            }
+            return(ret)
+        }else if(parsed['flag']=='removeQuestion'){
+            console.log("removeQuestion")
+            let results = await removeQuestion(parsed['payload'])
+            let ret
+            if(results){
+                ret = {
+                    id:"removeQuestion",
+                    data: "success"
+                }
+            }else{
+                ret = {
+                    id:"removeQuestion",
+                    data: "failure"
+                }
+            }
+            return(ret)
+        }else if(parsed['flag']=='addBlocked'){
+            console.log("addBlocked")
+            let results = await addBlockedWord(parsed['payload'])
+            let ret = {
+                    id:"addBlocked",
+                    data: "success"
+            }
+            return(ret)
+        }else if(parsed['flag']=='wordMap'){
+            console.log("wordMap")
+            let results = await getWordMap()
+            let ret = {
+                    id:"wordMap",
+                    data: results
+            }
+            return(ret)
+        }else if(parsed['flag']=='setMapWord'){
+            console.log("setMapWord")
+            let results = await setWordMap(parsed['payload'],parsed['map'])
+            let ret = {
+                    id:"setMapWord",
+                    data: 'success'
+            }
+            return(ret)
+        }else if(parsed['flag']=='deleteMap'){
+            console.log("deleteMap")
+            let results = await deleteMap(parsed['payload'])
+            let ret = {
+                    id:"deleteMap",
+                    data: 'success'
+            }
+            return(ret)
         }
     }else if(event['httpMethod']=="GET"){
         console.log("GET received")
@@ -374,7 +702,10 @@ const mainHandler = async(parsed, event) =>{
             scene : ret['Item']['scene'],
             question : ret['Item']['question'],
             answer : ret['Item']['answer'],
-            correct: ret['Item']['correct']
+            correct: ret['Item']['correct'],
+            limit: ret['Item']['limit'],
+            displayLimit: ret['Item']['displayLimit'],
+            displayQuestion: ret['Item']['displayQuestion']
           }
         }
         console.log("M",message)
@@ -404,8 +735,13 @@ exports.handler = async (event) => {
     // if(event['httpMethod'] == 'OPTIONS'){
     //     return { statusCode:200, body: "sucess", headers };
     // }
-    console.log("EVENT",event)
-    let parsed = JSON.parse(event['body'])
+    // console.log("EVENT",event)
+    let parsed;
+    try{
+        parsed = JSON.parse(event['body'])
+    }catch(e){
+        parsed = event['body'];
+    }
     let ret = await mainHandler(parsed, event)
     // console.log("EVENT: ", event['pathParameters'], "LENGTH:", event['pathParameters'].length>0)
     // TODO implement
