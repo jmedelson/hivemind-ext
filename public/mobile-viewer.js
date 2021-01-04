@@ -2,29 +2,24 @@ var token = "";
 var tuid = "";
 var ebs = "";
 var twitchscene = "";
-var globalQuestion = ""
-var globalAnswer = ""
-var response = null;
-var correctResponse = null;
-var questionsSeen = 0;
-var questionsCorrect = 0;
 var channelId = '';
-var submittedAnswer = false
-var lastsizex = 0;
-var lastsizey = 0;
 var limitEnabled = false;
 var responseLimit = 0
+var submittedAnswer = false
+var response = null;
+var correctResponse = null;
+
 
 var twitch = window.Twitch.ext;
 
 var requests = {
-    set: createRequest('POST', 'cycle'),
-    get: createRequest("GET", 'get'),
-    submit: createRequest("POST", 'submit'),
-    vote: createRequest("POST", 'vote'),
+    set: createRequest('POST'),
+    get: createRequest("GET"),
+    submit: createRequest("POST"),
+    vote: createRequest("POST"),
 };
 
-function createRequest(type, method) {
+function createRequest(type) {
 
     return {
         type: type,
@@ -41,21 +36,8 @@ function setAuth(token) {
 }
 
 twitch.onContext(function(context) {
-    let videoX = document.body.offsetWidth
-    let videoY = document.body.offsetHeight
-    if(videoX != lastsizex || videoY != lastsizey){
-        lastsizex = videoX;
-        lastsizey = videoY;
-        let defaultX = 1280;
-        let scaleX = videoX/defaultX
-        let defaultY = 720;
-        let scaleY = videoY/defaultY
-        let propertyX = "scaleX("+ scaleX +")"
-        let propertyY = "scaleY("+ scaleY +")"
-        let scale = "scale(" + scaleX +", "+scaleY+ ")"
-        document.getElementById("main").style.transform = scale
-    }
-});
+
+})
 
 twitch.onAuthorized(function(auth) {
     token = auth.token;
@@ -64,6 +46,7 @@ twitch.onAuthorized(function(auth) {
     setAuth(token);
     $.ajax(requests.get);
 });
+
 function updateBlock(res) {
     let data = JSON.parse(res)
     if(data.id == 'data'){
@@ -75,7 +58,6 @@ function updateBlock(res) {
         sceneSelect(data.message.scene)
     }
 }
-
 function logError(_, error, status) {
 }
 
@@ -83,8 +65,8 @@ function logSuccess(hex, status) {
 }
 
 function sceneSelect(scene){
-    $("#scroll-bar").show()
-    $("#triangle").show()
+    // $("#scroll-bar").show()
+    // $("#triangle").show()
     if(scene == 'hide'){
         $("#main").hide()
     }
@@ -117,9 +99,9 @@ function sceneSelect(scene){
         $("#wait-scene").hide()
         $("#polling").hide()
         $("#result").hide()
-        $("#button-row").show()
+        $("#button-holder").show()
         $("#agree-scene").show()
-        questionsSeen +=1 
+        // questionsSeen +=1 
         $("#btn-disagree").addClass("button-animations")
         $("#btn-agree").addClass("button-animations")
         $("#btn-disagree").css("opacity","100%")
@@ -134,7 +116,7 @@ function sceneSelect(scene){
         $("#wait-scene").hide()
         $("#polling").hide()
         $("#result").show()
-        $("#button-row").hide()
+        $("#button-holder").hide()
         $("#slash").hide()
         $("#agree-scene").show()
         $("#agree-answer").hide()
@@ -171,20 +153,17 @@ function updateCorrect(correct){
         if(response==null){
             $("#result").addClass("neutral")
         }else if(response==correctResponse){
-            questionsCorrect +=1
             $("#result").addClass("winner")
         }else{
             $("#result").addClass("loser")
         }
         sceneSelect("result")
-    }
-    
+    }   
 }
 function sendAnswer(){    
     if(submittedAnswer == true){
         return
     }
-    submittedAnswer = true
     let poll = $("#poll-input").val()
     $("#submitted-text").text('Submitted: '+ poll)
     poll = poll.toLowerCase();
@@ -194,6 +173,7 @@ function sendAnswer(){
     if(poll.length<1){
         return;
     }
+    submittedAnswer = true
     $("#input-div").fadeOut().promise().done(function(){
         $("#submitted-div").fadeIn()
     })
@@ -207,7 +187,14 @@ function sendAnswer(){
     requests.submit['data'] = JSON.stringify(message)
     $.ajax(requests.submit);
 }
+
 $(function() {
+    $( "#poll-input" ).focus(function() {
+        $("#logo").hide();
+    });
+    $( "#poll-input" ).focusout(function() {
+        $("#logo").show();
+    });
     $("#poll-submit").click(function(){
         sendAnswer()  
     });
@@ -277,5 +264,4 @@ $(function() {
             }
         }
     });
-
-});
+})

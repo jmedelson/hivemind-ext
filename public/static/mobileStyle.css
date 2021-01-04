@@ -1,0 +1,165 @@
+@font-face {
+    font-family: RoobertTW;
+    src: url("./fonts/RoobertTW-Regular.otf") format("opentype");
+    font-weight: normal;
+    font-style: normal;
+}
+@font-face {
+    font-family: RoobertTW;
+    src: url("./fonts/RoobertTW-Bold.otf") format("opentype");
+    font-weight: 700;
+    font-style: normal;
+}
+@font-face {
+    font-family: RoobertTW;
+    src: url("./fonts/RoobertTW-Heavy.otf") format("opentype");
+    font-weight: 900;
+    font-style: normal;
+}
+body{
+    background: #ee278b;
+}
+#wait-scene{
+    color: white;
+    padding: 0 1.5rem;
+    display: none;
+    font-family: 'RoobertTW';
+
+}
+#wait-scene h1{
+    text-align: center;
+    font-size: 2.5 rem;
+}
+#polling{
+    display: none;
+    color: white;
+    padding: 0 1.5rem;
+    font-family: 'RoobertTW';
+    letter-spacing: 1px;
+    font-weight: 700;
+}
+#polling .header{
+    text-align: center;    
+    font-size: 1.3rem;
+
+}
+#poll-question{
+    font-size: 1.5rem;
+    letter-spacing: 1px;
+    font-weight: 500;
+}
+#poll-input{
+    display: block;
+    width: 100%;
+    margin: auto;
+    border: none;
+    background-image: none;
+    background-color: transparent;
+    -webkit-box-shadow: none;
+    -moz-box-shadow: none;
+    box-shadow: none;
+    border-bottom: 3px solid white;
+    outline: none;
+    color: white;
+    font-size: 1.5rem;
+}
+#poll-input::placeholder{
+    color: white;
+    opacity: 50%;
+    font-family: 'RoobertTW';
+    font-weight: 700;
+    letter-spacing: 1px;
+    font-size: 1.5rem;
+}
+#poll-submit{
+    margin-top: 1.5rem;
+    display: block;
+    text-align: center;
+    border: 3px white solid;
+    padding: .3rem;
+    font-size: 1.3rem;
+    letter-spacing: 2px;
+}
+#poll-submit:active{
+    background: white;
+    color: #ee278b;
+}
+#poll-submit span img{
+    height:1rem;
+    width: 1rem;
+}
+#submitted-div{
+    display: none;
+    text-align: left;
+    font-size: 1.5rem;
+}
+#agree-scene{
+    display: none;
+    color: white;
+}
+#agree-answer{
+    text-align: center;
+    font-size: 2rem;
+    font-family: 'RoobertTW';
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+#result{
+    display: none;
+    text-align: center;
+    width: 92%;
+    margin: auto;
+    color: white;
+    font-size: 32px;
+    border: 3px solid; 
+    padding: 10px;
+    box-sizing: border-box;
+}
+.choice-button{
+    width: 60%;
+    font-size: 20px;
+    padding: 10px 20px;
+    border: 5px solid black;
+    color: black;
+    font-weight: 900;
+    text-align: center;
+    margin: auto;
+    display: block;
+}
+.button-animations:hover{
+    color: white;
+    border-color: white;
+
+}
+.button-animations:active{
+    background: white;
+    color:#ee278b;
+    border-color: white;
+}
+#btn-spacer{
+    margin: 0.5rem auto;
+    height: 2rem;
+}
+#slash{
+    height: 100%;
+    margin: auto;
+    display: block;
+}
+#logo{
+    position: absolute;
+    bottom: 20px;
+}
+#logo-img{
+    width: 60%;
+    margin: auto;
+    display: block
+}
+.neutral{
+    background: #63697b;
+}
+.winner{
+    background: #6bde01;
+}
+.loser{
+    background: #ce1b23;
+}
