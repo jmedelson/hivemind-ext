@@ -164,28 +164,66 @@ const updateDB2 = async (word, question) =>{
     }
     let ret = await documentClient.get(params2).promise();
     console.log("ret DATA", ret)
+    let mapped = false;
+    let originalWord = word
     if(ret.hasOwnProperty("Item")){
+        
         word = ret["Item"]["map"]
         if(ret == "XXXXX"){
             console.log("BLOCKED WORD EXIT EARLY", word)
             return
         }
+        mapped = true
     }
     let catagory = "count//"+question;
-    const params = {
-        TableName: 'hivemind-data',
+    let params = {}
+    if(mapped){
+        let merged = "merge" + originalWord
+        params = {
+            TableName: 'hivemind-data',
+            Key: {
+                "placeholder": catagory,
+                "word": word
+            },
+            UpdateExpression: 'ADD #a :y, #b :y',
+            ExpressionAttributeNames: {
+                '#a' : 'count',
+                "#b" : merged
+            },
+            ExpressionAttributeValues: {
+                ':y' : 1
+            },
+            ReturnValues: "UPDATED_NEW"
+        };
+    }else{
+        params = {
+            TableName: 'hivemind-data',
+            Key: {
+                "placeholder": catagory,
+                "word": word
+            },
+            UpdateExpression: 'ADD #a :y',
+            ExpressionAttributeNames: {'#a' : 'count'},
+            ExpressionAttributeValues: {
+                ':y' : 1
+            },
+            ReturnValues: "UPDATED_NEW"
+        };
+    }
+    var datetime = new Date().toLocaleDateString('en-US', { timeZone: 'America/Los_Angeles' });
+    const params3 = {
+        TableName: 'hivemind-usage',
         Key: {
-            "placeholder": catagory,
-            "word": word
+            "date": datetime
         },
         UpdateExpression: 'ADD #a :y',
         ExpressionAttributeNames: {'#a' : 'count'},
         ExpressionAttributeValues: {
             ':y' : 1
-        },
-        ReturnValues: "UPDATED_NEW"
-    };
-    return await documentClient.update(params).promise();
+        }
+    }
+    let [updated, updated2] = await Promise.all([documentClient.update(params).promise(), documentClient.update(params3).promise()])
+    return updated
 }
 const updateCount = async (question, limit) =>{
     console.log("updateCount: "+ question +"::"+"limit");
@@ -300,16 +338,13 @@ const voteDB = async (data) =>{
     }else{
         vote = "disagree"
     }
-    let question2 = data['question']
-    question2 = "vote//" + question2;
-    console.log('question2.....',question2,vote,channel)
+    // console.log('question2.....',question2,vote,channel)
     let answer = data['answer']
-    let sortK = channel+'//'+answer
     let params = {
-        TableName: 'hivemind-data',
+        TableName: 'hivemind-votes',
         Key:{
-            "placeholder": question2,
-            "word": sortK
+            "question": answer,
+            "channel": parseInt(channel)
         },
         UpdateExpression: 'ADD #a :y',
         ExpressionAttributeNames:{
@@ -321,7 +356,36 @@ const voteDB = async (data) =>{
         },
         ReturnValues:"NONE"
     };
-    let updated = await documentClient.update(params).promise();
+    let params2 = {
+        TableName: 'hivemind-votes',
+        Key:{
+            "question": answer,
+            "channel": 0
+        },
+        UpdateExpression: 'ADD #a :y',
+        ExpressionAttributeNames:{
+            "#a": vote,
+            // "#b": 'count'
+        },
+        ExpressionAttributeValues:{
+            ":y":1,
+        },
+        ReturnValues:"NONE"
+    };
+    var datetime = new Date().toLocaleDateString('en-US', { timeZone: 'America/Los_Angeles' });
+    const params3 = {
+        TableName: 'hivemind-usage',
+        Key: {
+            "date": datetime
+        },
+        UpdateExpression: 'ADD #a :y',
+        ExpressionAttributeNames: {'#a' : 'count'},
+        ExpressionAttributeValues: {
+            ':y' : 1
+        }
+    }
+    // let updated = await documentClient.update(params).promise();
+    let [updated, updated2, updated3] = await Promise.all([documentClient.update(params).promise(), documentClient.update(params2).promise(), documentClient.update(params3).promise()]);
     return updated;
 }
 const removeQuestion = async(question) =>{
@@ -426,6 +490,147 @@ const addQuestion = async (question,getOnly = false) =>{
         let updated = await documentClient.update(params2).promise(); 
     }
     return(true)
+}
+const mergeAnswer = async (question, item, target) => {
+    console.log("MERGING ANSWERS- ", item.word, 'into-',target.word, "for question", question)
+    let ques = "count//"+question
+    let params={
+        TableName: 'hivemind-data',
+        Key:{
+            "placeholder": ques,
+            "word": item.word
+        },
+        ReturnValues:"ALL_OLD"
+    }
+    let deleted = await documentClient.delete(params).promise();
+    deleted = deleted['Attributes']
+    console.log("DELETED ITEM:", deleted)
+    let params2 = {
+        TableName: 'hivemind-data',
+        Key:{
+            "placeholder": ques,
+            "word": target.word
+        },
+        UpdateExpression: 'ADD #a :y SET #b = :y',
+        ExpressionAttributeNames:{
+            "#a": "count",
+            "#b": "merge" + deleted['word']
+        },
+        ExpressionAttributeValues:{
+            ":y": deleted['count'],
+        },
+        ReturnValues:"UPDATED_NEW"
+    }
+    let [updated, mapped] = await Promise.all([documentClient.update(params2).promise(), setWordMap(item.word,target.word)]);
+    console.log("UPDATED =", updated)
+    return true
+}
+const undoMerge = async (question, word, unmerge) => {
+    console.log("UNMERGING--", unmerge, "from", word, "in question-", question)
+    let ques = "count//"+question
+    const params = {
+        TableName: 'hivemind-data',
+        Key:{
+            "placeholder": ques,
+            "word": word
+        },
+        UpdateExpression: 'REMOVE #a',
+        ExpressionAttributeNames: { 
+            '#a': unmerge
+        },
+        ReturnValues: 'UPDATED_OLD'
+    };
+    let [updated, results] = await Promise.all([documentClient.update(params).promise(), deleteMap(unmerge.substring(5))]);
+    console.log("UPDATED---", updated)
+    try {
+        updated = updated['Attributes']
+        let params2 = {
+            TableName: 'hivemind-data',
+            Key:{
+                "placeholder": ques,
+                "word": unmerge.substring(5)
+            },
+            UpdateExpression: 'SET #a = :y',
+            ExpressionAttributeNames: { 
+                '#a': "count"
+            },
+            ExpressionAttributeValues: {
+                ':y': updated[unmerge]
+            }
+        }
+        let minus = -1 * updated[unmerge]
+        let params3 = {
+            TableName: 'hivemind-data',
+            Key:{
+                "placeholder": ques,
+                "word": word
+            },
+            UpdateExpression: 'ADD #a :y',
+            ExpressionAttributeNames: { 
+                '#a': "count"
+            },
+            ExpressionAttributeValues: {
+                ':y': minus
+            }
+    };
+        let [created, subtracted] = await Promise.all([documentClient.update(params2).promise(), documentClient.update(params3).promise()]);
+        console.log("Created---", created)
+        
+    } catch (e) {
+        console.error("UNMERGING ERROR", e)
+    }
+    return true
+}
+const renameWord = async (question, original, word) =>{
+    console.log("renaming--", original, "to-", word, "in question-", question)
+    let ques = "count//"+question
+    let params = {
+        TableName: 'hivemind-data',
+        Key:{
+            "placeholder":ques,
+            "word":original
+        },
+        ReturnValues: 'ALL_OLD'
+    }
+    let deleted = await documentClient.delete(params).promise()
+    console.log("Deleted==", deleted)
+    deleted = deleted['Attributes']['count']
+    let params2 = {
+        TableName: 'hivemind-data',
+        Key:{
+            "placeholder":ques,
+            "word":word
+        },
+        UpdateExpression: 'SET #a = :y',
+        ExpressionAttributeNames: { 
+            '#a': "count"
+        },
+        ExpressionAttributeValues: {
+            ':y': deleted
+        }
+    }
+    let updated = await documentClient.update(params2).promise()
+    return true
+}
+const editCount = async (question, word, count) => {
+    console.log("Changing count of word-", word, "to-", count, "for question-",question)
+    let ques = "count//"+question
+    let params = {
+        TableName: 'hivemind-data',
+        Key:{
+            "placeholder":ques,
+            "word":word
+        },
+        UpdateExpression: 'SET #a = :y',
+        ExpressionAttributeNames: { 
+            '#a': "count"
+        },
+        ExpressionAttributeValues: {
+            ':y': parseInt(count)
+        }
+    }
+    let updated = await documentClient.update(params).promise()
+    return true
 }
 const scanDB = async () =>{
     console.log("scanDB----");
@@ -570,15 +775,17 @@ const mainHandler = async(parsed, event) =>{
             let [updated, check] = await Promise.all([updateDB2(payload,question),updateCount(question)]);
             console.log("CHECK!!!!!----", check)
             check = check.Attributes.count
-            if(check>= limit){
-                console.log("Limit hit: "+check+" > "+limit)
-                let message = {
-                    data:{
-                        identifier: "limitReached",
-                        payload:"limitReached"
+            if(limit != 0){
+                if(check>= limit){
+                    console.log("Limit hit: "+check+" > "+limit)
+                    let message = {
+                        data:{
+                            identifier: "limitReached",
+                            payload:"limitReached"
+                        }
                     }
-                }
-                await sendBroadcast(String(process.env.ownerId), JSON.stringify(message));
+                    await sendBroadcast(String(process.env.ownerId), JSON.stringify(message));
+                }   
             }
             let ret = {
                 id: "poll-response",
@@ -690,7 +897,40 @@ const mainHandler = async(parsed, event) =>{
                     data: 'success'
             }
             return(ret)
+        }else if(parsed['flag']=='mergeAnswer'){
+            console.log("mergeAnswer")
+            let results = await mergeAnswer(parsed['payload'],parsed['mergeItem'],parsed['mergeTarget']);
+            let ret = {
+                    id:"mergeAnswer",
+                    data: results
+            }
+            return(ret)
+        }else if(parsed['flag']=='undoMerge'){
+            console.log("undoMerge")
+            let results = await undoMerge(parsed['payload'],parsed['word'],parsed['unmerge']);
+            let ret = {
+                    id:"undoMerge",
+                    data: 'success'
+            }
+            return(ret)
+        }else if(parsed['flag']=='renameWord'){
+            console.log("renameWord")
+            let results = await renameWord(parsed['payload'],parsed['original'],parsed['word']);
+            let ret = {
+                    id:"renameWord",
+                    data: 'success'
+            }
+            return(ret)
+        }else if(parsed['flag']=='editCount'){
+            console.log("editCount")
+            let results = await editCount(parsed['payload'],parsed['word'],parsed['count']);
+            let ret = {
+                    id:"editCount",
+                    data: 'success'
+            }
+            return(ret)
         }
+        
     }else if(event['httpMethod']=="GET"){
         console.log("GET received")
         

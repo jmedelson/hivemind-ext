@@ -12,6 +12,18 @@ var correctResponse = null;
 
 var twitch = window.Twitch.ext;
 
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+ga('create', 'UA-57639561-8', {
+    cookieFlags: 'max-age=7200;secure;samesite=none'
+});
+ga("set","anonymizeIP",true);
+$(document).ready(function() {
+    ga('send', 'pageview');
+});
+
 var requests = {
     set: createRequest('POST'),
     get: createRequest("GET"),
@@ -186,6 +198,7 @@ function sendAnswer(){
     }
     requests.submit['data'] = JSON.stringify(message)
     $.ajax(requests.submit);
+    ga('send', 'event', 'Submit', 'mobile', poll);
 }
 
 $(function() {
@@ -219,6 +232,7 @@ $(function() {
             }
             requests.vote['data'] = JSON.stringify(message)
             $.ajax(requests.vote);
+            ga('send', 'event', 'Click', 'mobile', 'AGREE');
         }
     })
     $("#btn-disagree").click(function(){
@@ -237,6 +251,7 @@ $(function() {
             }
             requests.vote['data'] = JSON.stringify(message)
             $.ajax(requests.vote);
+            ga('send', 'event', 'Click', 'mobile', 'DISAGREE');
         }
     })
     twitch.listen('global', function (target, contentType, data) {

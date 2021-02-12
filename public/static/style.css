@@ -225,6 +225,7 @@
 #button-row{
     display: flex;
     justify-content: center;
+    margin-top: 53px;
 }
 #btn-agree{
     margin-right: 54px;
@@ -237,6 +238,9 @@
     color: black;
     font-weight: 900;
     text-align: center;
+    cursor: pointer;
+    box-shadow: 0px 0px 20px 6px #731AAA; 
+    /* box-shadow: -8px 8px 35px 2px rgb(199,139,255), 8px 8px 35px 2px rgb(118,216,255); */
 }
 .button-animations:hover{
     color: white;
@@ -259,11 +263,21 @@
 }
 #slash{
     position: absolute;
-    background: url("slash2.png");
-    height: 40px;
-    width: 25px;
-    left: 360px;
-    top: 70px;
+    background: url("newSlash.png");
+    height: 36px;
+    width: 36px;
+    left: 352px;
+    top: 61px;
+    display: none;
+}
+#movingslash {
+    position: absolute;
+    background: url("movingSlash2.gif");
+    height: 36px;
+    width: 36px;
+    left: 352px;
+    top: 61px;
+    display: none;
 }
 .neutral{
     background: #63697b;
@@ -360,3 +374,4 @@
     margin: auto;
     display: none;
 } */
+

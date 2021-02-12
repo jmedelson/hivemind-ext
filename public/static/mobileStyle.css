@@ -79,6 +79,7 @@ body{
     padding: .3rem;
     font-size: 1.3rem;
     letter-spacing: 2px;
+    cursor: pointer; 
 }
 #poll-submit:active{
     background: white;
@@ -99,10 +100,11 @@ body{
 }
 #agree-answer{
     text-align: center;
-    font-size: 2rem;
+    font-size: 1rem;
     font-family: 'RoobertTW';
     font-weight: 700;
     letter-spacing: 1px;
+    margin-top: 0;
 }
 #result{
     display: none;
@@ -125,11 +127,8 @@ body{
     text-align: center;
     margin: auto;
     display: block;
-}
-.button-animations:hover{
-    color: white;
-    border-color: white;
-
+    cursor: pointer; 
+    box-shadow: 0px 0px 20px 6px #731AAA; 
 }
 .button-animations:active{
     background: white;
@@ -146,8 +145,7 @@ body{
     display: block;
 }
 #logo{
-    position: absolute;
-    bottom: 20px;
+    margin-top: 30px;
 }
 #logo-img{
     width: 60%;

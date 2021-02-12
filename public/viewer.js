@@ -17,6 +17,18 @@ var responseLimit = 0
 
 var twitch = window.Twitch.ext;
 
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+ga('create', 'UA-57639561-8', {
+    cookieFlags: 'max-age=7200;secure;samesite=none'
+});
+ga("set","anonymizeIP",true);
+$(document).ready(function() {
+    ga('send', 'pageview');
+});
+
 var requests = {
     set: createRequest('POST', 'cycle'),
     get: createRequest("GET", 'get'),
@@ -107,7 +119,9 @@ function sceneSelect(scene){
         $("#btn-agree").addClass("button-animations")
         $("#btn-disagree").css("opacity","100%")
         $("#btn-agree").css("opacity","100%")
-        $("#slash").show()
+        $("#slash").css("opacity","100%")
+        $("#slash").hide()
+        $("#movingslash").show()
         correctResponse = null
         response = null
     }
@@ -124,7 +138,7 @@ function sceneSelect(scene){
         $("#btn-agree").addClass("button-animations")
         $("#btn-disagree").css("opacity","100%")
         $("#btn-agree").css("opacity","100%")
-        $("#slash").show()
+        $("#movingslash").show()
         $("#agree-answer").show()
         correctResponse = null
         response = null
@@ -135,7 +149,7 @@ function sceneSelect(scene){
         $("#polling").hide()
         $("#result").show()
         $("#button-row").hide()
-        $("#slash").hide()
+        $("#movingslash").hide()
         $("#agree-scene").show()
         $("#agree-answer").hide()
     }
@@ -206,6 +220,7 @@ function sendAnswer(){
     }
     requests.submit['data'] = JSON.stringify(message)
     $.ajax(requests.submit);
+    ga('send', 'event', 'Submit', 'computer', poll);
 }
 $(function() {
     $("#poll-submit").click(function(){
@@ -220,6 +235,9 @@ $(function() {
     $("#btn-agree").click(function(){
         if(response == null){
             response = true;
+            $("#movingslash").hide()
+            $("#slash").show()
+            $("#slash").animate({opacity:0.4},1000,function(){})
             $("#btn-disagree").animate({opacity:0.2},1000,function(){})
             $("#btn-disagree").removeClass("button-animations")
             $("#btn-agree").removeClass("button-animations")
@@ -231,16 +249,22 @@ $(function() {
                 "answer": globalAnswer
             }
             requests.vote['data'] = JSON.stringify(message)
-            $.ajax(requests.vote);
+            $.ajax(requests.vote);     
+            ga('send', 'event', 'Click', 'computer', 'AGREE');
         }
     })
     $("#btn-disagree").click(function(){
         if(response == null){
             console.log("clicked")
             response = false;
+            $("#movingslash").hide()
+            $("#slash").show()
+            $("#slash").animate({opacity:0.4},1000,function(){})
             $("#btn-agree").animate({opacity:0.2},1000,function(){})
             $("#btn-disagree").removeClass("button-animations")
             $("#btn-agree").removeClass("button-animations")
+            $("#movingslash").hide()
+            $("#slash").show()
             let message = {
                 "flag":"vote",
                 "payload": false,
@@ -250,6 +274,7 @@ $(function() {
             }
             requests.vote['data'] = JSON.stringify(message)
             $.ajax(requests.vote);
+            ga('send', 'event', 'Click', 'computer', 'DISAGREE');
         }
     })
     twitch.listen('global', function (target, contentType, data) {
