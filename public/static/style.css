@@ -202,6 +202,15 @@
     margin-top: 10px;
     padding: 5px 15px;
 }
+#agree-title{
+    font-size: 25px;
+    color: white;
+    position: absolute;
+    /* margin: auto; */
+    left: 326px;
+    top: -6px;
+    font-family: 'RoobertTW';
+}
 #agree-scene{
     position: absolute;
     right: 0;
@@ -227,7 +236,12 @@
     justify-content: center;
     margin-top: 53px;
 }
-#btn-agree{
+#button-row2{
+    display: flex;
+    justify-content: center;
+    margin-top: 53px;
+}
+#btn-disagree{
     margin-right: 54px;
 }
 .choice-button{
@@ -239,7 +253,7 @@
     font-weight: 900;
     text-align: center;
     cursor: pointer;
-    box-shadow: 0px 0px 20px 6px #731AAA; 
+    /* box-shadow: 0px 0px 20px 6px #731AAA;  */
     /* box-shadow: -8px 8px 35px 2px rgb(199,139,255), 8px 8px 35px 2px rgb(118,216,255); */
 }
 .button-animations:hover{
@@ -251,6 +265,10 @@
     background: white;
     color:#ee278b;
     border-color: white;
+}
+.button-selected{
+    color: white !important;
+    border-color: white !important;
 }
 #result{
     display: none;
@@ -375,3 +393,30 @@
     display: none;
 } */
 
+#choice-scene{
+    position: absolute;
+    right: 0;
+    /* left: 30px; */
+    /* bottom: 45px; */
+    background: #ee278b;
+    height: 158px;
+    width: 742px;
+    display: none;
+}
+#choicebutton-row1{
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+#choicebutton-row2{
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+#choice-spacer{
+    height: 35px;
+    display: none;
+}
+.button-spacer{
+    width: 90px;
+}

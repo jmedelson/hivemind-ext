@@ -128,7 +128,7 @@ body{
     margin: auto;
     display: block;
     cursor: pointer; 
-    box-shadow: 0px 0px 20px 6px #731AAA; 
+    /* box-shadow: 0px 0px 20px 6px #731AAA;  */
 }
 .button-animations:active{
     background: white;
@@ -160,4 +160,15 @@ body{
 }
 .loser{
     background: #ce1b23;
+}
+.button-selected{
+    color: white !important;
+    border-color: white !important;
+}
+.option-button{
+    margin-top: 20px;
+}
+#agree-title{
+    text-align: center;
+    font-family: 'RoobertTW';
 }
