@@ -64,7 +64,12 @@ const getDB = async () =>{
                 'correct',
                 'limit',
                 'displayLimit',
-                'displayQuestion'
+                'displayQuestion',
+                'choicenum',
+                'choice1',
+                'choice2',
+                'choice3',
+                'choice4'
             ]
         };
     let ret = await documentClient.get(params).promise();
@@ -131,6 +136,51 @@ const setAllCpanel = async (data) =>{
             ":k": data.stream3name,
             ":l": data.stream4name,
         },
+    };
+    return await documentClient.update(params).promise();
+}
+const logChoice = async (channel, question, choice) => {
+    channel = parseInt(channel)
+    const params = {
+        TableName: 'hivemind-choices-1',
+        Key: {
+            "question": question,
+            "channel": channel
+        },
+        UpdateExpression: "ADD #a :y, #b :y",
+        ExpressionAttributeNames:{
+            "#a": choice,
+            "#b": "total",
+        },
+        ExpressionAttributeValues:{
+            ":y": 1,
+        },
+        ReturnValues:"UPDATED_NEW"
+    };
+    return await documentClient.update(params).promise();
+}
+const setChoiceData = async (num, op1, op2, op3, op4)  =>{
+    const params = {
+        TableName: 'hivemind-ext',
+        Key:{
+            data:"data"
+        },
+        UpdateExpression: "SET #a =:a, #b =:b, #c =:c, #d =:d, #e =:e",
+        ExpressionAttributeNames:{
+            "#a": "choicenum",
+            "#b": "choice1",
+            "#c": "choice2",
+            "#d": "choice3",
+            "#e": "choice4",
+        },
+        ExpressionAttributeValues:{
+            ":a": num,
+            ":b": op1,
+            ":c": op2,
+            ":d": op3,
+            ":e": op4
+        },
+        ReturnValues:"UPDATED_NEW"
     };
     return await documentClient.update(params).promise();
 }
@@ -1180,11 +1230,73 @@ const mainHandler = async(parsed, event) =>{
                     data: 'success'
             }
             return(ret)
+        }else if(parsed['flag']=='sendChoices'){
+            console.log("sendChoices")
+            console.log(parsed['choicenum'],parsed['choice1'],parsed['choice2'],parsed['choice3'],parsed['choice4'])
+            let message = {
+                data:{
+                  identifier: "choice-set",
+                  payload:"choice-info",
+                  choicenum:parsed['choicenum'],
+                  choice1:parsed['choice1'],
+                  choice2:parsed['choice2'],
+                  choice3:parsed['choice3'],
+                  choice4:parsed['choice4'],
+                }
+            }
+            let [results, broadcastResult] = await Promise.all([setChoiceData(parsed['choicenum'],parsed['choice1'],parsed['choice2'],parsed['choice3'],parsed['choice4']),sendBroadcast(String(process.env.ownerId), JSON.stringify(message))])
+            sendBroadcast(String(process.env.ownerId), JSON.stringify(message))
+            let ret = {
+                    id:"sendChoices",
+                    data: 'success4'
+            }
+            return(ret)
+        }else if(parsed['flag']=='choice-ans'){
+            console.log("choice-ans")
+            console.log("PARSED =",parsed['channel'], parsed['answer'], parsed['payload'])
+            let choice = "option" + parsed['payload']
+            let channel = "0"
+            let viewer = "" 
+            try {
+                /* code */
+                let authCode =  event['headers']['Authorization']
+                let userAgent = event['headers']['User-Agent']
+                // console.log('authCode----',authCode)
+                let decoded = verifyAndDecode(authCode)
+                console.log("DECODED", decoded)
+                channel = decoded['channel_id']
+                viewer = decoded['opaque_user_id']
+                let usage = await logUser(viewer,userAgent, channel)
+                usage = usage['Attributes']['count']
+                if((usage > 25)&&(usage < 35)){
+                    // console.log(usage)
+                    let ip = event['requestContext']['identity']['sourceIp']
+                    let msg = "USAGE LIMIT PASSED//" + ip 
+                    await logIp(ip, viewer)
+                    throw msg
+                }else if(usage>34){
+                    let ip = event['requestContext']['identity']['sourceIp']
+                    let msg = "USAGE LIMIT PASSED GREATLY//" + ip 
+                    throw msg
+                }
+            } catch (e) {
+                console.log("ERROR: AUTH CODE ISSUE:", e)
+                let ret = {
+                    id: "choice-ans",
+                    data: "success202"
+                }
+                return(ret)
+            }
+            let [results,  results2] = await Promise.all([logChoice(channel, parsed['answer'], choice), logChoice(0, parsed['answer'], choice)])
+            let ret = {
+                    id:"choice-ans",
+                    data: 'success4'
+            }
+            return(ret)
         }
         
     }else if(event['httpMethod']=="GET"){
         console.log("GET received")
-        
         let ret = await getDB()
         // console.log(ret)
         let message = {
@@ -1196,7 +1308,12 @@ const mainHandler = async(parsed, event) =>{
             correct: ret['Item']['correct'],
             limit: ret['Item']['limit'],
             displayLimit: ret['Item']['displayLimit'],
-            displayQuestion: ret['Item']['displayQuestion']
+            displayQuestion: ret['Item']['displayQuestion'],
+            choicenum: ret['Item']['choicenum'],
+            choice1: ret['Item']['choice1'],
+            choice2: ret['Item']['choice2'],
+            choice3: ret['Item']['choice3'],
+            choice4: ret['Item']['choice4']
           }
         }
         // console.log("M",message)
@@ -1233,7 +1350,7 @@ exports.handler = async (event) => {
     }catch(e){
         parsed = event['body'];
     }
-    
+    // console.log("PARSED", parsed)
     try {
         /* code */
         var ret = await mainHandler(parsed, event)
