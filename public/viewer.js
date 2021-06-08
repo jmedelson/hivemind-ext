@@ -13,7 +13,12 @@ var submittedAnswer = false
 var lastsizex = 0;
 var lastsizey = 0;
 var limitEnabled = false;
-var responseLimit = 0
+var responseLimit = 0;
+var choicenum = 2;
+var choice1 = "unloaded";
+var choice2 = "unloaded";
+var choice3 = "unloaded";
+var choice4 = "unloaded";
 
 var twitch = window.Twitch.ext;
 
@@ -84,6 +89,16 @@ function updateBlock(res) {
         updateQuestion(data.message.question)
         updateAnswer(data.message.answer)
         updateCorrect(data.message.correct)
+        choicenum = data.message.choicenum;
+        console.log("choicenum",choicenum)
+        choice1 = data.message.choice1;
+        choice2 = data.message.choice2;
+        choice3 = data.message.choice3;
+        choice4 = data.message.choice4;
+        $('#op1').text(choice1)
+        $('#op2').text(choice2)
+        $('#op3').text(choice3)
+        $('#op4').text(choice4)
         sceneSelect(data.message.scene)
     }
 }
@@ -105,6 +120,7 @@ function sceneSelect(scene){
         $("#wait-scene").show()
         $("#polling").hide()
         $("#agree-scene").hide()
+        $("#choice-scene").hide()
     }
     if(scene == 'poll'){
         $("#main").show()
@@ -122,6 +138,7 @@ function sceneSelect(scene){
         $("#slash").css("opacity","100%")
         $("#slash").hide()
         $("#movingslash").show()
+        $("#choice-scene").hide()
         correctResponse = null
         response = null
     }
@@ -136,10 +153,13 @@ function sceneSelect(scene){
         questionsSeen +=1 
         $("#btn-disagree").addClass("button-animations")
         $("#btn-agree").addClass("button-animations")
+        $("#btn-agree").removeClass("button-selected")
+        $("#btn-disagree").removeClass("button-selected")
         $("#btn-disagree").css("opacity","100%")
         $("#btn-agree").css("opacity","100%")
         $("#movingslash").show()
         $("#agree-answer").show()
+        $("#choice-scene").hide()
         correctResponse = null
         response = null
     }
@@ -152,8 +172,51 @@ function sceneSelect(scene){
         $("#movingslash").hide()
         $("#agree-scene").show()
         $("#agree-answer").hide()
+        $("#choice-scene").hide()
+    }
+    if(scene == 'choice'){
+        response = null
+        $('#op1').text(choice1)
+        $('#op2').text(choice2)
+        $('#op3').text(choice3)
+        $('#op4').text(choice4)
+        $("#main").show()
+        $("#wait-scene").hide()
+        $("#polling").hide()
+        $("#result").hide()
+        $("#agree-scene").hide()
+        let targets = ["#op1","#op2","#op3","#op4"]
+        for(item of targets){
+            $(item).show()
+            $(item).addClass("button-animations")
+            $(item).removeClass("button-selected")
+        }
+        $(".choicebutton-row").show()
+        if(choicenum == 4){
+            $("#choicebutton-row2").show()
+            $("#choice-spacer").hide()
+        }else{
+            $("#choice-spacer").show()
+            $("#choicebutton-row2").hide()
+        }
+        $("#choice-scene").show()
     }
     twitchscene = scene
+}
+function updateChoice(data){
+    choicenum = data.choicenum;
+    console.log("choicenum",choicenum)
+    choice1 = data.choice1;
+    choice2 = data.choice2;
+    choice3 = data.choice3;
+    choice4 = data.choice4;
+    $('#op1').text(choice1)
+    $('#op2').text(choice2)
+    $('#op3').text(choice3)
+    $('#op4').text(choice4)
+    if(twitchscene == 'choice'){
+        sceneSelect('choice')
+    }
 }
 function updateQuestion(question){
     globalQuestion = question;
@@ -223,6 +286,32 @@ function sendAnswer(){
     ga('send', 'event', 'Submit', 'computer', poll);
 }
 $(function() {
+    $(".option-button").click(function(event){
+        if(response == null){
+            response = true;
+            let targets = ["#op1","#op2","#op3","#op4"]
+            console.log("EVENTS____", event.target.id)
+            let selected = "#" + event.target.id
+            $(selected).removeClass("button-animations")
+            $(selected).addClass("button-selected")
+            const index = targets.indexOf(selected);
+            targets.splice(index, 1);
+            for(item of targets){
+                $(item).animate({opacity:0.2},1000,function(){})
+                $(item).removeClass("button-animations")
+            }
+            let message = {
+                "flag":"choice-ans",
+                "payload": selected.slice(-1),
+                "question": globalQuestion,
+                "answer": globalAnswer,
+                "channel": channelId
+            }
+            requests.submit['data'] = JSON.stringify(message)
+            $.ajax(requests.submit);
+            ga('send', 'event', 'Choice', 'computer', selected.slice(-1));
+        }
+    });
     $("#poll-submit").click(function(){
         sendAnswer()  
     });
@@ -241,6 +330,7 @@ $(function() {
             $("#btn-disagree").animate({opacity:0.2},1000,function(){})
             $("#btn-disagree").removeClass("button-animations")
             $("#btn-agree").removeClass("button-animations")
+            $("#btn-agree").addClass("button-selected")
             let message = {
                 "flag":"vote",
                 "payload": true,
@@ -263,6 +353,7 @@ $(function() {
             $("#btn-agree").animate({opacity:0.2},1000,function(){})
             $("#btn-disagree").removeClass("button-animations")
             $("#btn-agree").removeClass("button-animations")
+            $("#btn-disagree").addClass("button-selected")
             $("#movingslash").hide()
             $("#slash").show()
             let message = {
@@ -287,6 +378,8 @@ $(function() {
             updateAnswer(parsed['data']['payload'])
         }else if(parsed['data']['identifier'] == 'correct'){
             updateCorrect(parsed['data']['payload'])
+        }else if(parsed['data']['identifier'] == 'choice-set'){
+            updateChoice(parsed['data'])
         }else if(parsed['data']['identifier'] == 'limit'){
             responseLimit = parsed['data']['payload']
         }else if(parsed['data']['identifier'] == 'displayLimit'){
